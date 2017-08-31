@@ -11,6 +11,24 @@ To get a fully working TICK stack to monitor a MySQL database there are several 
     * [Install Chronograf](#install-chronograf)
 
 ## 1. Install InfluxDB
+Get and install desired version from https://repos.influxdata.com/rhel/6/x86_64/stable/ (recommended 1.3.5):
+```
+wget https://repos.influxdata.com/rhel/6/x86_64/stable/influxdb-1.3.5.x86_64.rpm`
+sudo yum localinstall influxdb-1.3.5.x86_64.rpm
+rm influxdb-1.3.5.x86_64.rpm
+```
+
+
+Now edit the configuration file at `/etc/influxdb/influxdb.conf` and make some configuration changes:  
+In the main configuration set `reporting-disabled = true`  
+In the `[http]` section set `auth-enabled = true`
+
+
+Start the InfluxDB service:  
+`sudo systemctl start influxdb`
+
+Create an admin user:  
+`influx -execute "create user admin with password 'admin' with all privileges"`
 
 ## 2. Get some data into InfluxDB
 ### i. Install MySQL
