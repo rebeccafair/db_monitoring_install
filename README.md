@@ -4,7 +4,7 @@ To get a fully working TICK stack to monitor a MySQL database there are several 
 1. [Install InfluxDB](#1-install-influxdb)
 2. [Get some data into InfluxDB](#2-get-some-data-into-influxdb)
     1. [Install MySQL](#i-install-mysql)
-    2. [Install Telegraf on MySQL host](#ii-install-telegraf-on-mysql-host)
+    2. [Install Telegraf on MySQL host](#ii-install-telegraf)
 3. [Install Kapacitor](#3-install-kapacitor)
 4. [Install a Web UI](#4-install-a-web-ui)
     * [Install Grafana](#install-grafana)
@@ -78,8 +78,9 @@ Run the provided script `query.py` in the background to generate random queries 
 To see the process again: `ps ax | grep query.py`
 
 ### ii. Install Telegraf
-First on the InfluxDB host, create a user in InfluxDB to allow Telegraf to write metrics:
+First on the InfluxDB host, create a telegraf DB and user in InfluxDB to allow Telegraf to write metrics:
 ```
+influx -username admin -password 'admin' -execute "create database telegraf"
 influx -username admin -password 'admin' -execute "create user telegraf with password 'telegraf'"
 influx -username admin -password 'admin' -execute "grant write on telegraf to telegraf"
 ```
@@ -104,7 +105,52 @@ Uncomment `[[inputs.mysql]]` to enable MySQL metric collection and set `servers`
 Start Telegraf service: `sudo systemctl start telegraf`
 
 ## 3. Install Kapacitor
+First create a Kapacitor user in InfluxDB. This must be an admin user to allow Kapacitor to subscribe to InfluxDB data:  
+`influx -username admin -password 'admin' -execute "create user kapacitor with password 'kapacitor' with all privileges"`
+
+On the InfluxDB host, download and install desired version from https://repos.influxdata.com/rhel/6/x86_64/stable/ (recommended 1.3.2):
+```
+wget https://repos.influxdata.com/rhel/6/x86_64/stable/kapacitor-1.3.2.x86_64.rpm
+sudo yum localinstall kapacitor-1.3.2.x86_64.rpm
+rm kapacitor-1.3.2.x86_64.rpm
+```
+
+Edit the configuration file at `/etc/kapacitor/kapacitor.conf`:  
+In the main configuration set `hostname` to the Kapacitor host  
+In the `[[influxdb]]` set `urls` to the InfluxDB host and `username = "kapacitor"` and `password = "kapacitor"`  
+
+Start the Kapacitor service: `sudo systemctl start kapacitor`
+
+Add an example alert rule to Kapacitor: `kapacitor define load_alert -type stream -tick kapacitor/load_alert.tick -dbrp telegraf.autogen`
 
 ## 4. Install a web UI
+Install a tool to greate graphs and dashboards. Chronograf is specifically
+designed for InfluxDB and can also be used to manage Kapacitor alerts but is
+quite new so has fewer options when creating graphs/dashboards than Grafana.
+
 ### Install Grafana
+Create a user in InfluxDB to read data
+```
+influx -username admin -password 'admin' -execute "create user grafana with password 'grafana'"
+influx -username admin -password 'admin' -execute "grant read on telegraf to grafana"
+```
+
+Download and install desired version from https://s3-us-west-2.amazonaws.com/grafana-releases/ (recommended 4.4.3):
+```
+wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-4.4.3-1.x86_64.rpm
+sudo yum localinstall grafana-4.4.3-1.x86_64.rpm
+rm grafana-4.4.3-1.x86_64.rpm
+```
+
+Start the Grafana service: `sudo systemctl start grafana-server`
+
+Post the InfluxDB data source to grafana:  
+`curl -XPOST 'http://admin:admin@vm19.nubes.stfc.ac.uk:3000/api/datasources' -H 'Content-Type: application/json' -d @grafana/data_sources/influxdb.json`
+
+Access the Grafana interface on port 3000 and log in with username and password
+'admin'. Click on the grafana symbol in the top-left and go to Dashboards >
+Import and import the dashboards in the grafana_dashboards folder in this repo.
+Hopefully you can see some data!
+
 ### Install Chronograf
+

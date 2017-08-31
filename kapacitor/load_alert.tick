@@ -1,0 +1,70 @@
+var db = 'telegraf'
+
+var rp = 'autogen'
+
+var measurement = 'system'
+
+var groupBy = ['host']
+
+var whereFilter = lambda: TRUE
+
+var name = 'High Load'
+
+var idVar = name + ':{{.Group}}'
+
+var message = ' {{.Level}}:  High load on {{ index .Tags "host" }}'
+
+var idTag = 'alertID'
+
+var levelTag = 'level'
+
+var messageField = 'message'
+
+var durationField = 'duration'
+
+var outputDB = 'chronograf'
+
+var outputRP = 'autogen'
+
+var outputMeasurement = 'alerts'
+
+var triggerType = 'threshold'
+
+var details = 'KAPACITOR ALERT<br><br> {{.Level}}: Load reached {{ index .Fields "value" }} on {{ index .Tags "host"}} at {{.Time}} <a href="http://vm188.nubes.stfc.ac.uk:8888/sources/1/dashboards/1">View</a>'
+
+var crit = 0.35
+
+var data = stream
+    |from()
+        .database(db)
+        .retentionPolicy(rp)
+        .measurement(measurement)
+        .groupBy(groupBy)
+        .where(whereFilter)
+    |eval(lambda: "load15")
+        .as('value')
+
+var trigger = data
+    |alert()
+        .crit(lambda: "value" > crit)
+        .stateChangesOnly()
+        .message(message)
+        .id(idVar)
+        .idTag(idTag)
+        .levelTag(levelTag)
+        .messageField(messageField)
+        .durationField(durationField)
+        .details(details)
+        .email('rebecca.fair@stfc.ac.uk')
+
+trigger
+    |influxDBOut()
+        .create()
+        .database(outputDB)
+        .retentionPolicy(outputRP)
+        .measurement(outputMeasurement)
+        .tag('alertName', name)
+        .tag('triggerType', triggerType)
+
+trigger
+    |httpOut('output')
