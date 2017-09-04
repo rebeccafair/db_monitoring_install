@@ -117,11 +117,13 @@ rm kapacitor-1.3.2.x86_64.rpm
 
 Edit the configuration file at `/etc/kapacitor/kapacitor.conf`:  
 In the main configuration set `hostname` to the Kapacitor host  
-In the `[[influxdb]]` set `urls` to the InfluxDB host and `username = "kapacitor"` and `password = "kapacitor"`  
+In the `[[influxdb]]` section set `urls` to the InfluxDB host and `username = "kapacitor"` and `password = "kapacitor"`  
+In the `[[smtp]]` section fill in your SMTP server details to enable email alerting
 
 Start the Kapacitor service: `sudo systemctl start kapacitor`
 
-Add an example alert rule to Kapacitor: `kapacitor define load_alert -type stream -tick kapacitor/load_alert.tick -dbrp telegraf.autogen`
+Add an example alert rule to Kapacitor: `kapacitor define load_alert -type stream -tick kapacitor/load_alert.tick -dbrp telegraf.autogen`  
+Enable the rule: `kapacitor enable load_alert`  
 
 ## 4. Install a web UI
 Install a tool to greate graphs and dashboards. Chronograf is specifically
@@ -147,10 +149,26 @@ Start the Grafana service: `sudo systemctl start grafana-server`
 Post the InfluxDB data source to grafana:  
 `curl -XPOST 'http://admin:admin@vm19.nubes.stfc.ac.uk:3000/api/datasources' -H 'Content-Type: application/json' -d @grafana/data_sources/influxdb.json`
 
-Access the Grafana interface on port 3000 and log in with username and password
+Access the Grafana web interface on port 3000 and log in with username and password
 'admin'. Click on the grafana symbol in the top-left and go to Dashboards >
 Import and import the dashboards in the grafana_dashboards folder in this repo.
 Hopefully you can see some data!
 
 ### Install Chronograf
 
+Create a user in InfluxDB to read data and create/delete Kapacitor rules
+```
+influx -username admin -password 'admin' -execute "create user chronograf with password 'chronograf' with all privileges"
+influx -username admin -password 'admin' -execute "grant read on telegraf to chronograf"
+```
+
+Download and install desired version from https://repos.influxdata.com/rhel/6/x86_64/stable/ (recommended 1.3.7.0):
+```
+wget https://repos.influxdata.com/rhel/6/x86_64/stable/chronograf-1.3.7.0.x86_64.rpm
+sudo yum localinstall chronograf-1.3.7.0.x86_64.rpm
+rm chronograf-1.3.7.0.x86_64.rpm
+```
+
+Start the Chronograf service: `sudo systemctl start chronograf`
+
+Access the Chronograf web interface on port 8888 and enter the InfluxDB details, with the chronograf user/password. Click on the Host List on the left and you should be able to see your MySQL host. Click on the links under the Apps heading to see some pregenerated dashboards.
