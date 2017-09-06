@@ -101,7 +101,9 @@ Edit the configuration file at `/etc/telegraf/telegraf.conf` and make the follow
 In the `[agent]` section set `interval = "60s"` and `flush_interval = "60s"`  
 In the `[[outputs.influxdb]]` section set `urls` to the InfluxDB host and port (default 8086) and set `username = "telegraf"` and `password = "telegraf"`  
 Uncomment `[[inputs.mysql]]` to enable MySQL metric collection and set `servers` to the MySQL host with the telegraf user and password e.g. `servers = ["telegraf:telegraf@tcp(localhost:3306)/?tls=false"]`
-Set `gather_innodb_metrics = true` to collect lots of InnoDB metrics, these are collected by the command `SELECT NAME, COUNT FROM information_schema.INNODB_METRICS WHERE status='enabled';`. Many are enabled by default, but to get the full set of InnoDB metrics use `set global innodb_monitor_enable = 'all';` in the MySQL shell. These are required by many of the graphs in the 'InnoDB Metrics Advanced' Grafana dashboard.  
+In the `[[inputs.mysql]] section set `gather_innodb_metrics = true` to collect lots of InnoDB metrics, these are collected by the command `SELECT NAME, COUNT FROM information_schema.INNODB_METRICS WHERE status='enabled';`. Many are enabled by default, but to get the full set of InnoDB metrics use `set global innodb_monitor_enable = 'all';` in the MySQL shell. These are required by many of the graphs in the 'InnoDB Metrics Advanced' Grafana dashboard.  
+In the `[[inputs.mysql]]` section set `interval_slow` to a value higher than 0 to collect global status variables
+In the `[[inputs.mysql]]` section set `gather_process_list = true` to collect information about thread activity
 Uncomment any other desired MySQL metrics to be collected
 
 Start Telegraf service: `sudo systemctl start telegraf`
