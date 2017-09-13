@@ -97,14 +97,20 @@ sudo yum localinstall telegraf-1.3.5-1.x86_64.rpm
 rm telegraf-1.3.5-1.x86_64.rpm
 ```
 
+To collect custom MySQL data/metrics, copy the python script provided to the Telegraf plugin directory:
+```
+sudo cp telegraf/query_mysql.py /etc/telegraf/telegraf.d/
+```
+
 Edit the configuration file at `/etc/telegraf/telegraf.conf` and make the following configuration changes:  
-In the `[agent]` section set `interval = "60s"` and `flush_interval = "60s"`  
-In the `[[outputs.influxdb]]` section set `urls` to the InfluxDB host and port (default 8086) and set `username = "telegraf"` and `password = "telegraf"`  
-Uncomment `[[inputs.mysql]]` to enable MySQL metric collection and set `servers` to the MySQL host with the telegraf user and password e.g. `servers = ["telegraf:telegraf@tcp(localhost:3306)/?tls=false"]`
+In the `[agent]` section set `interval = "60s"`, `flush_interval = "60s"` and `precision = "1ns"`. Precision must be set as when collecting blocking sessions with the python script, 1ns is added to the timestamp for each session to avoid clashes.  
+In the `[[outputs.influxdb]]` section set `urls` to the InfluxDB host and port (default 8086) and set `username = "telegraf"` and `password = "telegraf"`.  
+Uncomment `[[inputs.mysql]]` to enable MySQL metric collection and set `servers` to the MySQL host with the telegraf user and password e.g. `servers = ["telegraf:telegraf@tcp(localhost:3306)/?tls=false"]`.  
 In the `[[inputs.mysql]] section set `gather_innodb_metrics = true` to collect lots of InnoDB metrics, these are collected by the command `SELECT NAME, COUNT FROM information_schema.INNODB_METRICS WHERE status='enabled';`. Many are enabled by default, but to get the full set of InnoDB metrics use `set global innodb_monitor_enable = 'all';` in the MySQL shell. These are required by many of the graphs in the 'InnoDB Metrics Advanced' Grafana dashboard.  
-In the `[[inputs.mysql]]` section set `interval_slow` to a value higher than 0 to collect global status variables
-In the `[[inputs.mysql]]` section set `gather_process_list = true` to collect information about thread activity
-Uncomment any other desired MySQL metrics to be collected
+In the `[[inputs.mysql]]` section set `interval_slow` to a value higher than 0 to collect global status variables.  
+In the `[[inputs.mysql]]` section set `gather_process_list = true` to collect information about thread activity.  
+Uncomment any other desired MySQL metrics to be collected.  
+In the `[[inputs.exec]]` section set `commands = ["python /etc/telegraf/telegraf.d/query_mysql.py"]` and `data_format = "influx"` to enable collection of custom MySQL data such as blocking sessions. Command-line arguments can also be used to change the script logging level etc., see the script for details.  
 
 Start Telegraf service: `sudo systemctl start telegraf`
 
