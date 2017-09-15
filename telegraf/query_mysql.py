@@ -21,25 +21,28 @@ def main():
     warnings.simplefilter('error', MySQLdb.Warning)
     logging.basicConfig(filename=args.logfile, level=getattr(logging, args.loglevel.upper()),
                         format='%(asctime)s: %(levelname)s: %(message)s')
-
     gather_metrics(args.host, args.port, args.user, args.password)
 
 
 def gather_metrics(db_host, db_port, db_user, db_pass):
     gc.collect() # Clean up any old DB connections
-
     try:
         db = MySQLdb.connect(host=db_host, port=db_port, user=db_user, passwd=db_pass)
         cursor = db.cursor()
     except MySQLdb.Warning as e:
         logging.warning(e[0])
     except MySQLdb.Error as e:
+        print 'Couldn\'t connect to DB!'
         logging.error('Failed to connect to DB - ' + e[1] + '(' + str(e[0]) + ')')
         return
 
     v = get_version(cursor)
+    host = os.uname()[1]
 
-    gather_blocking_sessions(cursor, v)
+    gather_blocking_sessions(cursor, v, host)
+
+    if (v['type'] == 'MariaDB'):
+        gather_query_response_time(cursor, v, host)
 
     db.close()
 
@@ -61,7 +64,7 @@ def get_version(cursor):
                }
     return versions
 
-def gather_blocking_sessions(cursor, versions):
+def gather_blocking_sessions(cursor, versions, host):
     query = ('SELECT r.trx_id waiting_trx_id, '
              'r.trx_mysql_thread_id waiting_thread, '
              'r.trx_query waiting_query, '
@@ -82,7 +85,7 @@ def gather_blocking_sessions(cursor, versions):
              'ON pw.ID = r.trx_mysql_thread_id;')
     measurement = 'mysql_blocking'
     tag_keys = ['host']
-    tag_values = [os.uname()[1]] 
+    tag_values = [host]
     field_keys = ['waiting_trx_id', 'waiting_thread', 'waiting_query', 'waiting_user', 'waiting_since',
                   'blocking_trx_id', 'blocking_thread', 'blocking_query', 'blocking_user']
     field_types = ['integer', 'integer', 'string', 'string', 'string',
@@ -107,17 +110,68 @@ def gather_blocking_sessions(cursor, versions):
             logging.error('Failed to fetch blocking sessions - ' + e[1] + '(' + str(e[0]) + ')')
             return
 
-        if len(data) > 0: 
-            field_values = data
-            print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
+        field_values = data
+        print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
 
     logging.info('Successfully queried for blocking sessions')
+
+def gather_query_response_time(cursor, versions, host):
+    query = 'SELECT count from information_schema.query_response_time order by time asc'
+    avg_query = 'SELECT SUM(total)/SUM(count) from information_schema.query_response_time'
+    measurement = 'mysql_query_response'
+    tag_keys = ['host']
+    tag_values = [host]
+    field_keys = ['avg_response_time', '1us_count', '10us_count', '100us_count','1ms_count', '10ms_count', '100ms_count',
+                  '1s_count', '10s_count', '100s_count', '1000s_count', '10000s_count', '100000s_count', '1000000s_count', 'too_long_count']
+    field_types = ['float', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer',
+                   'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer']
+
+    try:
+        cursor.execute(avg_query)
+    except MySQLdb.Warning as e:
+        logging.warning(e[0])
+    except MySQLdb.Error as e:
+        logging.error('Failed to query for average query response time - ' + e[1] + '(' + str(e[0]) + ')')
+        return
+
+    try:
+        data = cursor.fetchall()
+    except MySQLdb.Warning as e:
+        logging.warning(e[0])
+    except MySQLdb.Error as e:
+        logging.error('Failed to fetch average query response time - ' + e[1] + '(' + str(e[0]) + ')')
+        return
+    avg_query_response_time = data[0][0]
+
+    try:
+        cursor.execute(query)
+    except MySQLdb.Warning as e:
+        logging.warning(e[0])
+    except MySQLdb.Error as e:
+        logging.error('Failed to query for query response time distribution - ' + e[1] + '(' + str(e[0]) + ')')
+        return
+
+    try:
+        data = cursor.fetchall()
+    except MySQLdb.Warning as e:
+        logging.warning(e[0])
+    except MySQLdb.Error as e:
+        logging.error('Failed to fetch query response time distribution - ' + e[1] + '(' + str(e[0]) + ')')
+        return
+
+    field_values = [[avg_query_response_time] + [int(x[0]) for x in data]]
+    print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
+
+    logging.info('Successfully queried for query response time')
 
 def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types):
     tags = [key + '=' + tag_values[i] for i, key in enumerate(tag_keys)]
     timestamp = int(time.time())*(10**9)
     for i,vals in enumerate(field_values):
         fields = ilp_join_fields(field_keys, field_values[i], field_types)
+        # If there are multiple measurements with the same name, tags, fields and timestamp they overwrite
+        # each other in InfluxDB. Add 1ns to timestamp to avoid this. Requires precision = "1ns" in
+        # Telegraf configuration
         print measurement + ',' + ','.join(tags) + ' ' + ','.join(fields) + ' ' + str(timestamp + i)
 
 def ilp_join_fields(keys, values, types):
