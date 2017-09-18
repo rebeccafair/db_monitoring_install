@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "4.4.3"
+      "version": "4.5.1"
     },
     {
       "type": "panel",
@@ -164,7 +164,7 @@
               "unit": "short"
             },
             {
-              "alias": "Blocking Transaction ID",
+              "alias": "Blocking Trx ID",
               "colorMode": null,
               "colors": [
                 "rgba(245, 54, 54, 0.9)",
@@ -179,7 +179,7 @@
               "unit": "none"
             },
             {
-              "alias": "Waiting Transaction ID",
+              "alias": "Waiting Trx ID",
               "colorMode": null,
               "colors": [
                 "rgba(245, 54, 54, 0.9)",
@@ -209,6 +209,51 @@
               "unit": "short"
             },
             {
+              "alias": "Waiting Host",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "/.*waiting_host.*/",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
+            },
+            {
+              "alias": "Blocking Host",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "/.*blocking_host.*/",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
               "alias": "",
               "colorMode": null,
               "colors": [
@@ -230,7 +275,7 @@
               "measurement": "mysql_blocking",
               "orderByTime": "ASC",
               "policy": "default",
-              "query": "SELECT waiting_since, waiting_trx_id, waiting_thread, waiting_query, waiting_user, blocking_trx_id, blocking_thread, blocking_query, blocking_user FROM \"mysql_blocking\" WHERE \"host\" =~ /^$Host$/ AND $timeFilter",
+              "query": "SELECT waiting_since, waiting_trx_id, waiting_thread, waiting_query, waiting_user, waiting_host, blocking_trx_id, blocking_thread, blocking_query, blocking_user, blocking_host FROM \"mysql_blocking\" WHERE \"host\" =~ /^$Host$/ AND $timeFilter",
               "rawQuery": true,
               "refId": "A",
               "resultFormat": "table",
@@ -277,7 +322,7 @@
               "alias": "Time Collected",
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "pattern": "Time",
-              "type": "date"
+              "type": "hidden"
             },
             {
               "alias": "Blocking Query",
@@ -371,7 +416,7 @@
               "unit": "short"
             },
             {
-              "alias": "Blocking Transaction ID",
+              "alias": "Blocking Trx ID",
               "colorMode": null,
               "colors": [
                 "rgba(245, 54, 54, 0.9)",
@@ -386,7 +431,7 @@
               "unit": "none"
             },
             {
-              "alias": "Waiting Transaction ID",
+              "alias": "Waiting Trx ID",
               "colorMode": null,
               "colors": [
                 "rgba(245, 54, 54, 0.9)",
@@ -416,6 +461,36 @@
               "unit": "short"
             },
             {
+              "alias": "Blocking Host",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "/.*blocking_host.*/",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "Waiting Host",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "/.*waiting_host.*/",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
               "alias": "",
               "colorMode": null,
               "colors": [
@@ -437,7 +512,7 @@
               "measurement": "mysql_blocking",
               "orderByTime": "ASC",
               "policy": "default",
-              "query": "SELECT waiting_since, waiting_trx_id, waiting_thread, waiting_query, waiting_user, blocking_trx_id, blocking_thread, blocking_query, blocking_user FROM \"mysql_blocking\" WHERE \"host\" =~ /^$Host$/ AND $timeFilter",
+              "query": "SELECT waiting_since, waiting_trx_id, waiting_thread, waiting_query, waiting_user, waiting_host, blocking_trx_id, blocking_thread, blocking_query, blocking_user, blocking_host FROM \"mysql_blocking\" WHERE \"host\" =~ /^$Host$/ AND $timeFilter",
               "rawQuery": true,
               "refId": "A",
               "resultFormat": "table",
@@ -607,11 +682,19 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
+      },
+      {
+        "datasource": "InfluxDB",
+        "filters": [],
+        "hide": 0,
+        "label": "Extra filters",
+        "name": "waiting_user",
+        "type": "adhoc"
       }
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
@@ -641,5 +724,5 @@
   },
   "timezone": "",
   "title": "MySQL Blocked Transactions",
-  "version": 10
+  "version": 13
 }

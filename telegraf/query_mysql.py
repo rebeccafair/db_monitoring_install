@@ -49,11 +49,13 @@ def gather_blocking_sessions(cursor, versions, host):
              'r.trx_mysql_thread_id waiting_thread, '
              'r.trx_query waiting_query, '
              'pw.user waiting_user, '
+             'pw.host waiting_host, '
              'r.trx_wait_started waiting_since, '
              'b.trx_id blocking_trx_id, '
              'b.trx_mysql_thread_id blocking_thread, '
              'b.trx_query blocking_query, '
-             'pb.user blocking_user '
+             'pb.user blocking_user, '
+             'pb.host blocking_host '
              'FROM information_schema.innodb_lock_waits w '
              'INNER JOIN information_schema.innodb_trx b '
              'ON b.trx_id = w.blocking_trx_id '
@@ -66,10 +68,10 @@ def gather_blocking_sessions(cursor, versions, host):
     measurement = 'mysql_blocking'
     tag_keys = ['host']
     tag_values = [host]
-    field_keys = ['waiting_trx_id', 'waiting_thread', 'waiting_query', 'waiting_user', 'waiting_since',
-                  'blocking_trx_id', 'blocking_thread', 'blocking_query', 'blocking_user']
-    field_types = ['integer', 'integer', 'string', 'string', 'string',
-                   'integer', 'integer', 'string', 'string']
+    field_keys = ['waiting_trx_id', 'waiting_thread', 'waiting_query', 'waiting_user', 'waiting_host', 'waiting_since',
+                  'blocking_trx_id', 'blocking_thread', 'blocking_query', 'blocking_user', 'blocking_host']
+    field_types = ['integer', 'integer', 'string', 'string', 'string', 'string',
+                   'integer', 'integer', 'string', 'string', 'string']
 
     if (versions['type'] == 'MariaDB' or
        (versions['major_version'] == 5 and versions['minor_version'] >= 5)):
