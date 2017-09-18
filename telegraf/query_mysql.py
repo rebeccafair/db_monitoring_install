@@ -38,7 +38,7 @@ def gather_metrics(db_host, db_port, db_user, db_pass):
     host = os.uname()[1]
 
     gather_blocking_sessions(cursor, v, host)
-    gather_query_response_time(cursor, v, host)
+    gather_query_response_time(cursor, host)
 
     db.close()
 
