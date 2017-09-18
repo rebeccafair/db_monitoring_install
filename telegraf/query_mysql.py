@@ -32,7 +32,6 @@ def gather_metrics(db_host, db_port, db_user, db_pass):
     except MySQLdb.Warning as e:
         logging.warning(e[0])
     except MySQLdb.Error as e:
-        print 'Couldn\'t connect to DB!'
         logging.error('Failed to connect to DB - ' + e[1] + '(' + str(e[0]) + ')')
         return
 
@@ -117,21 +116,21 @@ def gather_blocking_sessions(cursor, versions, host):
 
 def gather_query_response_time(cursor, versions, host):
     query = 'SELECT count from information_schema.query_response_time order by time asc'
-    avg_query = 'SELECT SUM(total)/SUM(count) from information_schema.query_response_time'
+    sum_query = 'SELECT SUM(total), SUM(count) from information_schema.query_response_time'
     measurement = 'mysql_query_response'
     tag_keys = ['host']
     tag_values = [host]
-    field_keys = ['avg_response_time', '1us_count', '10us_count', '100us_count','1ms_count', '10ms_count', '100ms_count',
+    field_keys = ['sum_total', 'sum_count', '1us_count', '10us_count', '100us_count','1ms_count', '10ms_count', '100ms_count',
                   '1s_count', '10s_count', '100s_count', '1000s_count', '10000s_count', '100000s_count', '1000000s_count', 'too_long_count']
-    field_types = ['float', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer',
+    field_types = ['float', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer',
                    'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer']
 
     try:
-        cursor.execute(avg_query)
+        cursor.execute(sum_query)
     except MySQLdb.Warning as e:
         logging.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to query for average query response time - ' + e[1] + '(' + str(e[0]) + ')')
+        logging.error('Failed to query for summed query response time - ' + e[1] + '(' + str(e[0]) + ')')
         return
 
     try:
@@ -139,9 +138,9 @@ def gather_query_response_time(cursor, versions, host):
     except MySQLdb.Warning as e:
         logging.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to fetch average query response time - ' + e[1] + '(' + str(e[0]) + ')')
+        logging.error('Failed to fetch summed query response time - ' + e[1] + '(' + str(e[0]) + ')')
         return
-    avg_query_response_time = data[0][0]
+    sum_query_response = [float(data[0][0]), int(data[0][1])]
 
     try:
         cursor.execute(query)
@@ -159,7 +158,7 @@ def gather_query_response_time(cursor, versions, host):
         logging.error('Failed to fetch query response time distribution - ' + e[1] + '(' + str(e[0]) + ')')
         return
 
-    field_values = [[avg_query_response_time] + [int(x[0]) for x in data]]
+    field_values = [[x for x in sum_query_response] + [int(x[0]) for x in data]]
     print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
 
     logging.info('Successfully queried for query response time')
@@ -170,9 +169,9 @@ def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, fi
     for i,vals in enumerate(field_values):
         fields = ilp_join_fields(field_keys, field_values[i], field_types)
         # If there are multiple measurements with the same name, tags, fields and timestamp they overwrite
-        # each other in InfluxDB. Add 1ns to timestamp to avoid this. Requires precision = "1ns" in
+        # each other in InfluxDB. Add 1ms to timestamp to avoid this. Requires precision = "1ms" in
         # Telegraf configuration
-        print measurement + ',' + ','.join(tags) + ' ' + ','.join(fields) + ' ' + str(timestamp + i)
+        print measurement + ',' + ','.join(tags) + ' ' + ','.join(fields) + ' ' + str(timestamp + i*(10**6))
 
 def ilp_join_fields(keys, values, types):
     joined_fields = []
