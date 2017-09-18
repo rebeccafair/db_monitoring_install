@@ -23,7 +23,6 @@ def main():
                         format='%(asctime)s: %(levelname)s: %(message)s')
     gather_metrics(args.host, args.port, args.user, args.password)
 
-
 def gather_metrics(db_host, db_port, db_user, db_pass):
     gc.collect() # Clean up any old DB connections
     try:
@@ -33,35 +32,17 @@ def gather_metrics(db_host, db_port, db_user, db_pass):
         logging.warning(e[0])
     except MySQLdb.Error as e:
         logging.error('Failed to connect to DB - ' + e[1] + '(' + str(e[0]) + ')')
-        return
+        sys.exit(0)
 
     v = get_version(cursor)
     host = os.uname()[1]
 
     gather_blocking_sessions(cursor, v, host)
-
-    if (v['type'] == 'MariaDB'):
-        gather_query_response_time(cursor, v, host)
+    gather_query_response_time(cursor, v, host)
 
     db.close()
 
     logging.info('Successfully gathered MySQL metrics')
-
-def get_version(cursor):
-    try:
-        version = cursor.execute('SELECT VERSION()')
-        version = cursor.fetchone()[0]
-    except MySQLdb.Warning as e:
-        logging.warning(e[0])
-    except MySQLdb.Error as e:
-        logging.error('Failed to get DB version - ' + e[1] + '(' + str(e[0]) + ')')
-        sys.exit(0)
-
-    versions = { 'major_version': int(version.split('.')[0]),
-                 'minor_version': int(version.split('.')[1]),
-                 'type': 'MariaDB' if 'MariaDB' in version.split('.')[2] else 'MySQL'
-               }
-    return versions
 
 def gather_blocking_sessions(cursor, versions, host):
     query = ('SELECT r.trx_id waiting_trx_id, '
@@ -93,29 +74,13 @@ def gather_blocking_sessions(cursor, versions, host):
     if (versions['type'] == 'MariaDB' or
        (versions['major_version'] == 5 and versions['minor_version'] >= 5)):
 
-        try:
-            cursor.execute(query)
-        except MySQLdb.Warning as e:
-            logging.warning(e[0])
-        except MySQLdb.Error as e:
-            logging.error('Failed to query for blocking sessions - ' + e[1] + '(' + str(e[0]) + ')')
-            return
-
-        try:
-            data = cursor.fetchall()
-        except MySQLdb.Warning as e:
-            logging.warning(e[0])
-        except MySQLdb.Error as e:
-            logging.error('Failed to fetch blocking sessions - ' + e[1] + '(' + str(e[0]) + ')')
-            return
-
-        field_values = data
+        field_values = execute_query(cursor, query)
         print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
 
     logging.info('Successfully queried for blocking sessions')
 
-def gather_query_response_time(cursor, versions, host):
-    query = 'SELECT count from information_schema.query_response_time order by time asc'
+def gather_query_response_time(cursor, host):
+    count_query = 'SELECT count from information_schema.query_response_time order by time asc'
     sum_query = 'SELECT SUM(total), SUM(count) from information_schema.query_response_time'
     measurement = 'mysql_query_response'
     tag_keys = ['host']
@@ -125,43 +90,68 @@ def gather_query_response_time(cursor, versions, host):
     field_types = ['float', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer',
                    'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer']
 
+    if variable_is_on(cursor,'query_response_time_stats'):
+        try:
+            data = execute_query(cursor, sum_query)
+            sum_query_response = [float(data[0][0]), int(data[0][1])]
+
+            data = execute_query(cursor, count_query)
+            field_values = [[x for x in sum_query_response] + [int(x[0]) for x in data]]
+        except IndexError:
+            return
+
+        print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
+
+    logging.info('Successfully queried for query response time')
+
+def get_version(cursor):
     try:
-        cursor.execute(sum_query)
+        version = cursor.execute('SELECT VERSION()')
+        version = cursor.fetchone()[0]
     except MySQLdb.Warning as e:
         logging.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to query for summed query response time - ' + e[1] + '(' + str(e[0]) + ')')
-        return
+        logging.error('Failed to get DB version - ' + e[1] + '(' + str(e[0]) + ')')
+        sys.exit(0)
+
+    versions = { 'major_version': int(version.split('.')[0]),
+                 'minor_version': int(version.split('.')[1]),
+                 'type': 'MariaDB' if 'MariaDB' in version.split('.')[2] else 'MySQL'
+               }
+    return versions
+
+def variable_is_on(cursor, variable):
+    query = 'show variables like \'' + variable + '\''
+    data = execute_query(cursor, query)
 
     try:
-        data = cursor.fetchall()
-    except MySQLdb.Warning as e:
-        logging.warning(e[0])
-    except MySQLdb.Error as e:
-        logging.error('Failed to fetch summed query response time - ' + e[1] + '(' + str(e[0]) + ')')
-        return
-    sum_query_response = [float(data[0][0]), int(data[0][1])]
+        value = data[0][1]
+    except IndexError:
+        value = None
 
+    if value == 'ON':
+        return True
+    else:
+        return False
+
+def execute_query(cursor, query):
     try:
         cursor.execute(query)
     except MySQLdb.Warning as e:
         logging.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to query for query response time distribution - ' + e[1] + '(' + str(e[0]) + ')')
-        return
+        logging.error('Failed to execute query [' + query + '] - ' + e[1] + '(' + str(e[0]) + ')')
+        return []
 
     try:
         data = cursor.fetchall()
     except MySQLdb.Warning as e:
         logging.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to fetch query response time distribution - ' + e[1] + '(' + str(e[0]) + ')')
-        return
+        logging.error('Failed to fetch data for query [' + query + '] - ' + e[1] + '(' + str(e[0]) + ')')
+        return []
 
-    field_values = [[x for x in sum_query_response] + [int(x[0]) for x in data]]
-    print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
-
-    logging.info('Successfully queried for query response time')
+    return data
 
 def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types):
     tags = [key + '=' + tag_values[i] for i, key in enumerate(tag_keys)]
@@ -184,4 +174,5 @@ def ilp_join_fields(keys, values, types):
             joined_fields.append(keys[i] + '=' + str(values[i]))
     return joined_fields  
 
-main()
+if __name__ == "__main__":
+    main()
