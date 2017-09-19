@@ -60,6 +60,13 @@ uninstall plugin validate_password;
 alter user 'root'@'localhost' identified by 'root';
 ```
 
+Now set the long query time to some appropriate value (default 10.0s), change the slow query log file and switch slow query logging on
+```
+mysql -u root -proot -e "set global slow_query_log_file = "/var/lib/mysql/slow.log";"
+mysql -u root -proot -e "set global long_query_time = 1.0;"
+mysql -u root -proot -e "set global slow_query_log = 'ON';"
+```
+
 To get some dummy data into MySQL you can use the following GitHub repo:
 ```
 git clone https://github.com/datacharmer/test_db.git
@@ -103,7 +110,7 @@ sudo cp telegraf/query_mysql.py /etc/telegraf/telegraf.d/
 ```
 
 Edit the configuration file at `/etc/telegraf/telegraf.conf` and make the following configuration changes:  
-In the `[agent]` section set `interval = "60s"`, `flush_interval = "60s"` and `precision = "1ns"`. Precision must be set as when collecting blocking sessions with the python script, 1ns is added to the timestamp for each session to avoid clashes.  
+In the `[agent]` section set `interval = "60s"`, `flush_interval = "60s"` and `precision = "1ms"`. Precision must be set as when collecting blocking sessions with the python script, 1ms is added to the timestamp for each session to avoid clashes.  
 In the `[[outputs.influxdb]]` section set `urls` to the InfluxDB host and port (default 8086) and set `username = "telegraf"` and `password = "telegraf"`.  
 Uncomment `[[inputs.mysql]]` to enable MySQL metric collection and set `servers` to the MySQL host with the telegraf user and password e.g. `servers = ["telegraf:telegraf@tcp(localhost:3306)/?tls=false"]`.  
 In the `[[inputs.mysql]] section set `gather_innodb_metrics = true` to collect lots of InnoDB metrics, these are collected by the command `SELECT NAME, COUNT FROM information_schema.INNODB_METRICS WHERE status='enabled';`. Many are enabled by default, but to get the full set of InnoDB metrics use `set global innodb_monitor_enable = 'all';` in the MySQL shell. These are required by many of the graphs in the 'InnoDB Metrics Advanced' Grafana dashboard.  
@@ -111,6 +118,7 @@ In the `[[inputs.mysql]]` section set `interval_slow` to a value higher than 0 t
 In the `[[inputs.mysql]]` section set `gather_process_list = true` to collect information about thread activity.  
 Uncomment any other desired MySQL metrics to be collected.  
 In the `[[inputs.exec]]` section set `commands = ["python /etc/telegraf/telegraf.d/query_mysql.py"]` and `data_format = "influx"` to enable collection of custom MySQL data such as blocking sessions. Command-line arguments can also be used to change the script logging level etc., see the script for details.  
+To collect the slow query logs, in the `[[inputs.logparser]]` section set `files = ["/var/lib/mysql/slow.log"]`,`from_beginning = false` and under `[inputs.logparser.grok]` set `measurement = "mysql_slow"` and `patterns = ["%{GREEDYDATA:query:string};"]` to parse the slow queries from the log. The telegraf logparser plugin currently doesn't support multiline log events, so Telegraf only collects the query and not other information such as user/host 
 
 Start Telegraf service: `sudo systemctl start telegraf`
 
