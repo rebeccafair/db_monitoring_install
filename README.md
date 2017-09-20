@@ -109,6 +109,11 @@ To collect custom MySQL data/metrics, copy the python script provided to the Tel
 sudo cp telegraf/query_mysql.py /etc/telegraf/telegraf.d/
 ```
 
+Give Telegraf read access to any files that need to be monitored (such as the slow query log):
+```
+sudo setfacl -m 'user:telegraf:r' /var/lib/mysql/slow.log
+```
+
 Edit the configuration file at `/etc/telegraf/telegraf.conf` and make the following configuration changes:  
 In the `[agent]` section set `interval = "60s"`, `flush_interval = "60s"` and `precision = "1ms"`. Precision must be set as when collecting blocking sessions with the python script, 1ms is added to the timestamp for each session to avoid clashes.  
 In the `[[outputs.influxdb]]` section set `urls` to the InfluxDB host and port (default 8086) and set `username = "telegraf"` and `password = "telegraf"`.  
