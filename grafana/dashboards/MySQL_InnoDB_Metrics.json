@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "4.4.3"
+      "version": "4.5.1"
     },
     {
       "type": "panel",
@@ -2777,5 +2777,5 @@
   },
   "timezone": "",
   "title": "MySQL InnoDB Metrics",
-  "version": 43
+  "version": 44
 }

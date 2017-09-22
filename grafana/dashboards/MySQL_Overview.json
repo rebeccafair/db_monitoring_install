@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "4.4.3"
+      "version": "4.5.1"
     },
     {
       "type": "panel",
@@ -1884,7 +1884,7 @@
               "groupBy": [
                 {
                   "params": [
-                    "1s"
+                    "$__interval"
                   ],
                   "type": "time"
                 }
@@ -5050,7 +5050,7 @@
       "titleSize": "h6"
     },
     {
-      "collapse": true,
+      "collapse": false,
       "height": 243,
       "panels": [
         {
@@ -5530,8 +5530,8 @@
             "alignAsTable": false,
             "avg": true,
             "current": false,
-            "hideEmpty": true,
-            "hideZero": true,
+            "hideEmpty": false,
+            "hideZero": false,
             "max": false,
             "min": false,
             "rightSide": false,
@@ -5699,7 +5699,7 @@
           "dashLength": 10,
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
-          "description": "",
+          "description": "This requires the '[[inputs.net]]' plugin be uncommented in the Telegraf configuration",
           "fill": 2,
           "id": 58,
           "legend": {
@@ -6123,5 +6123,5 @@
   },
   "timezone": "",
   "title": "MySQL Overview",
-  "version": 36
+  "version": 40
 }
