@@ -205,7 +205,7 @@
               "decimals": 2,
               "pattern": "/.*waiting_since.*/",
               "thresholds": [],
-              "type": "number",
+              "type": "date",
               "unit": "short"
             },
             {
@@ -310,6 +310,7 @@
           "id": 4,
           "links": [],
           "pageSize": null,
+          "repeat": null,
           "scroll": true,
           "showHeader": true,
           "sort": {
@@ -334,6 +335,7 @@
               ],
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 2,
+              "link": false,
               "pattern": "/.*blocking_query.*/",
               "preserveFormat": false,
               "thresholds": [],
@@ -457,7 +459,7 @@
               "decimals": 2,
               "pattern": "/.*waiting_since.*/",
               "thresholds": [],
-              "type": "number",
+              "type": "date",
               "unit": "short"
             },
             {
@@ -486,6 +488,7 @@
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 2,
               "pattern": "/.*waiting_host.*/",
+              "preserveFormat": false,
               "thresholds": [],
               "type": "string",
               "unit": "short"
@@ -538,6 +541,7 @@
           "timeFrom": null,
           "title": "Blocked Transactions History",
           "transform": "table",
+          "transparent": false,
           "type": "table"
         },
         {
@@ -687,8 +691,8 @@
         "datasource": "InfluxDB",
         "filters": [],
         "hide": 0,
-        "label": "Extra filters",
-        "name": "waiting_user",
+        "label": "Extra Filters",
+        "name": "extra",
         "type": "adhoc"
       }
     ]
@@ -724,5 +728,5 @@
   },
   "timezone": "",
   "title": "MySQL Blocked Transactions",
-  "version": 13
+  "version": 17
 }
