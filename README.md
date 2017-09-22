@@ -85,9 +85,10 @@ Run the provided script `query.py` in the background to generate random queries 
 To see the process again: `ps ax | grep query.py`
 
 ### ii. Install Telegraf
-First on the InfluxDB host, create a telegraf DB and user in InfluxDB to allow Telegraf to write metrics:
+First on the InfluxDB host, create a telegraf DB (with retention policy) and user in InfluxDB to allow Telegraf to write metrics:
 ```
 influx -username admin -password 'admin' -execute "create database telegraf"
+influx -username admin -password 'admin' -execute "create retention policy '30_days' on 'telegraf' duration 30d replication 1 default"
 influx -username admin -password 'admin' -execute "create user telegraf with password 'telegraf'"
 influx -username admin -password 'admin' -execute "grant write on telegraf to telegraf"
 ```
@@ -182,6 +183,13 @@ Start the Grafana service: `sudo systemctl start grafana-server`
 
 Post the InfluxDB data source to grafana:  
 `curl -XPOST 'http://admin:admin@vm19.nubes.stfc.ac.uk:3000/api/datasources' -H 'Content-Type: application/json' -d @grafana/data_sources/influxdb.json`
+
+Change the default organisation name:  
+`curl -XPUT 'http://admin:admin@vm19.nubes.stfc.ac.uk:3000/api/org' -H 'Content-Type: application/json' -d '{ "name":"STFC"}'`
+
+In the Grafana configuration file at `/etc/grafana/grafana.ini`:  
+Under `[analytics]` set `reporting_enabled = false`  
+Under `[auth.anonymous]` set `enabled = true`,`org_name = STFC` and `org_role = Viewer`
 
 Access the Grafana web interface on port 3000 and log in with username and password
 'admin'. Click on the grafana symbol in the top-left and go to Dashboards >
