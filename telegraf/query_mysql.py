@@ -37,14 +37,15 @@ def gather_metrics(db_host, db_port, db_user, db_pass):
     v = get_version(cursor)
     host = os.uname()[1]
 
-    gather_blocking_sessions(cursor, v, host)
+    gather_blocking_sessions(cursor, host, v)
     gather_query_response_time(cursor, host)
+    gather_userstats(cursor, host, v)
 
     db.close()
 
     logging.info('Successfully gathered MySQL metrics')
 
-def gather_blocking_sessions(cursor, versions, host):
+def gather_blocking_sessions(cursor, host, versions):
     query = ('SELECT r.trx_id waiting_trx_id, '
              'r.trx_mysql_thread_id waiting_thread, '
              'r.trx_query waiting_query, '
@@ -104,7 +105,32 @@ def gather_query_response_time(cursor, host):
 
         print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
 
-    logging.info('Successfully queried for query response time')
+        logging.info('Successfully queried for query response time')
+
+def gather_userstats(cursor, host, versions):
+    query = 'show user_statistics'
+    measurement = 'mysql_userstat'
+    tag_keys = ['host','user']
+    field_keys = ['total_connections', 'concurrent_connections', 'connected_time', 'busy_time', 'cpu_time', 'bytes_received', 'bytes_sent',
+                  'binlog_bytes_written', 'rows_read', 'rows_sent', 'rows_deleted', 'rows_inserted', 'rows_updated', 'select_commands',
+                  'update_commands', 'other_commands', 'commit_transactions', 'rollback_transactions', 'denied_connections', 'lost_connections',
+                  'access_denied', 'empty_queries', 'total_ssl_connections', 'max_statement_time_exceeded']
+    field_types = ['integer', 'integer', 'integer', 'float', 'float', 'integer', 'integer',
+                   'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer',
+                   'integer', 'integer', 'integer', 'integer', 'integer', 'integer',
+                   'integer', 'integer', 'integer', 'integer']
+
+    if variable_is_on(cursor,'userstat'):
+        # total_ssl_connections and max_statement_time_exceeded not available in MariaDB < 10.1.1
+        if (versions['major_version'] < 10 or
+           (versions['major_version'] == 10 and versions['minor_version'] == 1 and versions['patch_number'] < 1)):
+            field_keys = field_keys[:-2]
+            field_types = field_types[:-2]
+        data = execute_query(cursor, query)
+        field_values = [x[1:] for x in data]
+        tag_values = [host, [x[0] for x in data]]
+        print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
+        logging.info('Successfully queried for user statistics')
 
 def get_version(cursor):
     try:
@@ -116,8 +142,10 @@ def get_version(cursor):
         logging.error('Failed to get DB version - ' + e[1] + '(' + str(e[0]) + ')')
         sys.exit(0)
 
-    versions = { 'major_version': int(version.split('.')[0]),
-                 'minor_version': int(version.split('.')[1]),
+    version_number = version.split('-')[0]
+    versions = { 'major_version': int(version_number.split('.')[0]),
+                 'minor_version': int(version_number.split('.')[1]),
+                 'patch_number': int(version_number.split('.')[2]),
                  'type': 'MariaDB' if 'MariaDB' in version.split('.')[2] else 'MySQL'
                }
     return versions
@@ -156,14 +184,26 @@ def execute_query(cursor, query):
     return data
 
 def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types):
-    tags = [key + '=' + tag_values[i] for i, key in enumerate(tag_keys)]
+    # If there are multiple measurements with the same name, tags, fields and timestamp they overwrite
+    # each other in InfluxDB. Add 1ms to timestamp to avoid this. Requires precision = "1ms" in
+    # Telegraf configuration
     timestamp = int(time.time())*(10**9)
+    increment_timestamp = not any(isinstance(x, list) for x in tag_values)
     for i,vals in enumerate(field_values):
+        if increment_timestamp:
+            timestamp = timestamp + i*(10**6)
+        tags = ilp_join_tags(tag_keys, tag_values, i)
         fields = ilp_join_fields(field_keys, field_values[i], field_types)
-        # If there are multiple measurements with the same name, tags, fields and timestamp they overwrite
-        # each other in InfluxDB. Add 1ms to timestamp to avoid this. Requires precision = "1ms" in
-        # Telegraf configuration
-        print measurement + ',' + ','.join(tags) + ' ' + ','.join(fields) + ' ' + str(timestamp + i*(10**6))
+        print measurement + ',' + ','.join(tags) + ' ' + ','.join(fields) + ' ' + str(timestamp)
+
+def ilp_join_tags(keys, values, index):
+    joined_tags = []
+    for i, key in enumerate(keys):
+        if isinstance(values[i], list):
+            joined_tags.append(key + '=' + str(values[i][index]))
+        else:
+            joined_tags.append(key + '=' + str(values[i]))
+    return joined_tags
 
 def ilp_join_fields(keys, values, types):
     joined_fields = []
