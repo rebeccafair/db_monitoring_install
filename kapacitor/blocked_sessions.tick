@@ -1,20 +1,20 @@
-var name = 'High Load'
+var name = 'Blocked sessions'
 
 var triggerType = 'threshold'
 
 // Thresholds
-var crit = 0.35
+var crit = 2
 
 // Query details
 var db = 'telegraf'
 var rp = '30_days'
-var measurement = 'system'
+var measurement = 'mysql_blocking'
 var groupBy = ['host']
 var whereFilter = lambda: TRUE
 
 // Subject and text for email
-var message = '{{.Level}}:  High load on {{ index .Tags "host" }}'
-var details = '{{.Level}}: Load reached {{ index .Fields "value" }} on {{ index .Tags "host"}} <a href="http://vm19.nubes.stfc.ac.uk:3000"}}">View</a><br><br> {{.Time}}'
+var message = '{{.Level}}:  Blocked sessions on {{ index .Tags "host" }}'
+var details = 'There are currently {{ index .Fields "count" | printf "%.0f" }} blocked sessions on {{ index .Tags "host"}} <a href="http://vm19.nubes.stfc.ac.uk:3000/dashboard/db/mysql-blocked-transactions?refresh=5s&orgId=1&var-Host={{ index .Tags "host"}}">View</a><br><br> {{.Time}}'
 
 // Details for storing alert history in InfluxDB
 var outputDB = 'kapacitor'
@@ -26,6 +26,11 @@ var levelTag = 'level'
 var messageField = 'message'
 var durationField = 'duration'
 
+// The stats node emits the total number of points processed once per minute.
+// This is required to generate a blocked sessions count of 0, because otherwise 
+// if there are no blocked sessions, no value is generated and the alert state
+// remains at critical. The derivative of the total number of points is used to
+// find the number of blocked sessions in the past minute.
 var data = stream
     |from()
         .database(db)
@@ -33,12 +38,15 @@ var data = stream
         .measurement(measurement)
         .groupBy(groupBy)
         .where(whereFilter)
-    |eval(lambda: "load15")
-        .as('value')
+    |stats(1m)
+    |derivative('emitted')
+        .unit(1m)
+        .nonNegative()
+        .as('count')
 
 var trigger = data
     |alert()
-        .crit(lambda: "value" > crit)
+        .crit(lambda: "count" > crit)
         .stateChangesOnly()
         .message(message)
         .id(idVar)
@@ -48,6 +56,7 @@ var trigger = data
         .durationField(durationField)
         .details(details)
         .email('rebecca.fair@stfc.ac.uk')
+        .log('/tmp/alerts.log')
 
 trigger
     |influxDBOut()

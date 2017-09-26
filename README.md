@@ -87,10 +87,10 @@ To see the process again: `ps ax | grep query.py`
 ### ii. Install Telegraf
 First on the InfluxDB host, create a telegraf DB (with retention policy) and user in InfluxDB to allow Telegraf to write metrics:
 ```
-influx -username admin -password 'admin' -execute "create database telegraf"
-influx -username admin -password 'admin' -execute "create retention policy '30_days' on 'telegraf' duration 30d replication 1 default"
-influx -username admin -password 'admin' -execute "create user telegraf with password 'telegraf'"
-influx -username admin -password 'admin' -execute "grant write on telegraf to telegraf"
+influx -username admin -password 'admin' -execute 'create database telegraf'
+influx -username admin -password 'admin' -execute 'create retention policy "30_days" on "telegraf"' duration 30d replication 1 default'
+influx -username admin -password 'admin' -execute 'create user telegraf with password "telegraf"'
+influx -username admin -password 'admin' -execute 'grant write on telegraf to telegraf'
 ```
 
 Now on the MySQL host, create a user in MySQL to allow Telegraf to obtain MySQL metrics:
@@ -143,6 +143,12 @@ Start Telegraf service: `sudo systemctl start telegraf`
 First create a Kapacitor user in InfluxDB. This must be an admin user to allow Kapacitor to subscribe to InfluxDB data:  
 `influx -username admin -password 'admin' -execute "create user kapacitor with password 'kapacitor' with all privileges"`
 
+Now create a Kapacitor DB and set the retention policy to record alert history:
+```
+influx -username admin -password 'admin' -execute 'create database kapacitor'
+influx -username admin -password 'admin' -execute 'create retention policy "30_days" on "kapacitor" duration 30d replication 1 default'
+```
+
 On the InfluxDB host, download and install desired version from https://repos.influxdata.com/rhel/6/x86_64/stable/ (recommended 1.3.2):
 ```
 wget https://repos.influxdata.com/rhel/6/x86_64/stable/kapacitor-1.3.2.x86_64.rpm
@@ -157,7 +163,7 @@ In the `[[smtp]]` section fill in your SMTP server details to enable email alert
 
 Start the Kapacitor service: `sudo systemctl start kapacitor`
 
-Add an example alert rule to Kapacitor: `kapacitor define load_alert -type stream -tick kapacitor/load_alert.tick -dbrp telegraf.autogen`  
+Add an example alert rule to Kapacitor: `kapacitor define load_alert -type stream -tick kapacitor/load_alert.tick -dbrp telegraf.30_days`  
 Enable the rule: `kapacitor enable load_alert`  
 
 ## 4. Install a web UI
@@ -170,6 +176,7 @@ Create a user in InfluxDB to read data
 ```
 influx -username admin -password 'admin' -execute "create user grafana with password 'grafana'"
 influx -username admin -password 'admin' -execute "grant read on telegraf to grafana"
+influx -username admin -password 'admin' -execute "grant read on kapacitor to grafana"
 ```
 
 Download and install desired version from https://s3-us-west-2.amazonaws.com/grafana-releases/ (recommended 4.4.3):
