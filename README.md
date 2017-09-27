@@ -159,7 +159,7 @@ rm kapacitor-1.3.2.x86_64.rpm
 Edit the configuration file at `/etc/kapacitor/kapacitor.conf`:  
 In the main configuration set `hostname` to the Kapacitor host  
 In the `[[influxdb]]` section set `urls` to the InfluxDB host and `username = "kapacitor"` and `password = "kapacitor"`  
-In the `[[smtp]]` section fill in your SMTP server details to enable email alerting
+In the `[[smtp]]` section fill in your SMTP server details to enable email alerting. Set the list of default To addresses and set `global = true` and `state-changes-only = true`
 
 Start the Kapacitor service: `sudo systemctl start kapacitor`
 

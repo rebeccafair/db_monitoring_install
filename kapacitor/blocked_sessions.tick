@@ -3,7 +3,7 @@ var name = 'Blocked sessions'
 var triggerType = 'threshold'
 
 // Thresholds
-var crit = 2
+var crit = 1
 
 // Query details
 var db = 'telegraf'
@@ -14,7 +14,7 @@ var whereFilter = lambda: TRUE
 
 // Subject and text for email
 var message = '{{.Level}}:  Blocked sessions on {{ index .Tags "host" }}'
-var details = 'There are currently {{ index .Fields "count" | printf "%.0f" }} blocked sessions on {{ index .Tags "host"}} <a href="http://vm19.nubes.stfc.ac.uk:3000/dashboard/db/mysql-blocked-transactions?refresh=5s&orgId=1&var-Host={{ index .Tags "host"}}">View</a><br><br> {{.Time}}'
+var details = 'There are currently {{ index .Fields "value" | printf "%.0f" }} blocked sessions on {{ index .Tags "host"}} <a href="http://vm19.nubes.stfc.ac.uk:3000/dashboard/db/mysql-blocked-transactions?refresh=5s&orgId=1&var-Host={{ index .Tags "host"}}">View</a><br><br> {{.Time}}'
 
 // Details for storing alert history in InfluxDB
 var outputDB = 'kapacitor'
@@ -42,11 +42,11 @@ var data = stream
     |derivative('emitted')
         .unit(1m)
         .nonNegative()
-        .as('count')
+        .as('value')
 
 var trigger = data
     |alert()
-        .crit(lambda: "count" > crit)
+        .crit(lambda: "value" > crit)
         .stateChangesOnly()
         .message(message)
         .id(idVar)
@@ -55,8 +55,7 @@ var trigger = data
         .messageField(messageField)
         .durationField(durationField)
         .details(details)
-        .email('rebecca.fair@stfc.ac.uk')
-        .log('/tmp/alerts.log')
+        .email()
 
 trigger
     |influxDBOut()

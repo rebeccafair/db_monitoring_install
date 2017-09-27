@@ -1,20 +1,20 @@
-var name = 'High Load'
+var name = 'High CPU'
 
 var triggerType = 'threshold'
 
 // Thresholds
-var crit = 0.35
+var crit = 90
 
 // Query details
 var db = 'telegraf'
 var rp = '30_days'
-var measurement = 'system'
+var measurement = 'cpu'
 var groupBy = ['host']
 var whereFilter = lambda: TRUE
 
 // Subject and text for email
-var message = '{{.Level}}:  High load on {{ index .Tags "host" }}'
-var details = '{{.Level}}: Load reached {{ index .Fields "value" | printf "%.2f" }} on {{ index .Tags "host"}} <a href="http://vm19.nubes.stfc.ac.uk:3000">View</a><br><br> {{.Time}}'
+var message = '{{.Level}}:  High user CPU usage on {{ index .Tags "host" }}'
+var details = '{{.Level}}: User CPU usage reached {{ index .Fields "value" | printf "%.2f" }} on {{ index .Tags "host"}} <a href="http://vm19.nubes.stfc.ac.uk:3000">View</a><br><br> {{.Time}}'
 
 // Details for storing alert history in InfluxDB
 var outputDB = 'kapacitor'
@@ -33,7 +33,7 @@ var data = stream
         .measurement(measurement)
         .groupBy(groupBy)
         .where(whereFilter)
-    |eval(lambda: "load15")
+    |eval(lambda: "usage_user")
         .as('value')
 
 var trigger = data
