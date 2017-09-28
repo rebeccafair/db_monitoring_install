@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "4.4.3"
+      "version": "4.5.2"
     },
     {
       "type": "panel",
@@ -44,10 +44,205 @@
   "hideControls": false,
   "id": null,
   "links": [],
+  "refresh": false,
   "rows": [
     {
       "collapse": false,
-      "height": "250px",
+      "height": 265,
+      "panels": [
+        {
+          "columns": [],
+          "datasource": "${DS_INFLUXDB}",
+          "fontSize": "100%",
+          "id": 7,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": true
+          },
+          "span": 6,
+          "styles": [
+            {
+              "alias": "Time",
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "pattern": "Time",
+              "type": "hidden"
+            },
+            {
+              "alias": "Host",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(51, 174, 46, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "host",
+              "thresholds": [
+                ""
+              ],
+              "type": "number",
+              "unit": "short"
+            },
+            {
+              "alias": "Uptime",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "last",
+              "thresholds": [
+                ""
+              ],
+              "type": "number",
+              "unit": "s"
+            }
+          ],
+          "targets": [
+            {
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "host"
+                  ],
+                  "type": "tag"
+                }
+              ],
+              "measurement": "system",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "table",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "uptime"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "last"
+                  }
+                ]
+              ],
+              "tags": []
+            }
+          ],
+          "title": "System Uptime",
+          "transform": "table",
+          "type": "table"
+        },
+        {
+          "columns": [],
+          "datasource": "${DS_INFLUXDB}",
+          "fontSize": "100%",
+          "id": 8,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": true
+          },
+          "span": 6,
+          "styles": [
+            {
+              "alias": "Time",
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "pattern": "Time",
+              "type": "hidden"
+            },
+            {
+              "alias": "Host",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "host",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
+            },
+            {
+              "alias": "Uptime",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "last",
+              "thresholds": [],
+              "type": "number",
+              "unit": "s"
+            }
+          ],
+          "targets": [
+            {
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "host"
+                  ],
+                  "type": "tag"
+                }
+              ],
+              "measurement": "mysql",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "table",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "uptime"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "last"
+                  }
+                ]
+              ],
+              "tags": []
+            }
+          ],
+          "title": "MySQL Uptime",
+          "transform": "table",
+          "type": "table"
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Dashboard Row",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 252,
       "panels": [
         {
           "aliasColors": {},
@@ -57,6 +252,7 @@
           "datasource": "${DS_INFLUXDB}",
           "fill": 1,
           "id": 1,
+          "interval": "> 1m",
           "legend": {
             "avg": false,
             "current": true,
@@ -86,7 +282,7 @@
               "groupBy": [
                 {
                   "params": [
-                    "1m"
+                    "$__interval"
                   ],
                   "type": "time"
                 },
@@ -95,12 +291,6 @@
                     "host"
                   ],
                   "type": "tag"
-                },
-                {
-                  "params": [
-                    "null"
-                  ],
-                  "type": "fill"
                 }
               ],
               "measurement": "system",
@@ -169,11 +359,14 @@
           "datasource": "${DS_INFLUXDB}",
           "fill": 1,
           "id": 2,
+          "interval": "> 1m",
           "legend": {
+            "alignAsTable": false,
             "avg": false,
             "current": false,
             "max": false,
             "min": false,
+            "rightSide": false,
             "show": true,
             "total": false,
             "values": false
@@ -198,15 +391,9 @@
               "groupBy": [
                 {
                   "params": [
-                    "1m"
+                    "$__interval"
                   ],
                   "type": "time"
-                },
-                {
-                  "params": [
-                    "host"
-                  ],
-                  "type": "tag"
                 },
                 {
                   "params": [
@@ -215,16 +402,17 @@
                   "type": "fill"
                 }
               ],
-              "measurement": "cpu",
               "orderByTime": "ASC",
               "policy": "default",
-              "refId": "A",
+              "query": "SELECT 100 - mean(\"usage_idle\") FROM \"cpu\" WHERE $timeFilter GROUP BY time($__interval), \"host\" fill(null)",
+              "rawQuery": true,
+              "refId": "B",
               "resultFormat": "time_series",
               "select": [
                 [
                   {
                     "params": [
-                      "usage_user"
+                      "value"
                     ],
                     "type": "field"
                   },
@@ -240,7 +428,7 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "User Memory Usage",
+          "title": "Memory Usage",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -256,7 +444,7 @@
           },
           "yaxes": [
             {
-              "format": "short",
+              "format": "percent",
               "label": "",
               "logBase": 1,
               "max": null,
@@ -283,7 +471,7 @@
     },
     {
       "collapse": false,
-      "height": 251,
+      "height": 270,
       "panels": [
         {
           "aliasColors": {},
@@ -293,6 +481,7 @@
           "datasource": "${DS_INFLUXDB}",
           "fill": 1,
           "id": 3,
+          "interval": "> 1m",
           "legend": {
             "avg": false,
             "current": false,
@@ -348,13 +537,13 @@
                   },
                   {
                     "params": [],
-                    "type": "last"
+                    "type": "max"
                   },
                   {
                     "params": [
                       "1s"
                     ],
-                    "type": "derivative"
+                    "type": "non_negative_derivative"
                   }
                 ]
               ],
@@ -381,7 +570,7 @@
           "yaxes": [
             {
               "format": "short",
-              "label": null,
+              "label": "Connections / s",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -460,13 +649,13 @@
                   },
                   {
                     "params": [],
-                    "type": "last"
+                    "type": "max"
                   },
                   {
                     "params": [
                       "1s"
                     ],
-                    "type": "derivative"
+                    "type": "non_negative_derivative"
                   }
                 ]
               ],
@@ -493,7 +682,7 @@
           "yaxes": [
             {
               "format": "short",
-              "label": null,
+              "label": "Queries / s",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -519,7 +708,7 @@
     },
     {
       "collapse": false,
-      "height": 267,
+      "height": 250,
       "panels": [
         {
           "aliasColors": {},
@@ -573,7 +762,7 @@
               "measurement": "mysql",
               "orderByTime": "ASC",
               "policy": "default",
-              "query": "SELECT derivative(last(\"bytes_sent\"), 1s) + derivative(last(\"bytes_received\"), 1s) FROM \"mysql\" WHERE $timeFilter GROUP BY time(1s), \"host\"",
+              "query": "SELECT non_negative_derivative(max(\"bytes_sent\")) + non_negative_derivative(max(\"bytes_received\")) FROM \"mysql\" WHERE $timeFilter GROUP BY time(1s), \"host\"",
               "rawQuery": true,
               "refId": "A",
               "resultFormat": "time_series",
@@ -642,6 +831,7 @@
           "dashLength": 10,
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
+          "description": "This requires the '[[inputs.net]]' plugin be uncommented in the Telegraf configuration",
           "fill": 1,
           "id": 6,
           "legend": {
@@ -669,7 +859,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "alias": "$tag_host",
+              "alias": "$tag_host - $tag_interface",
               "dsType": "influxdb",
               "groupBy": [
                 {
@@ -683,32 +873,38 @@
                     "host"
                   ],
                   "type": "tag"
+                },
+                {
+                  "params": [
+                    "interface"
+                  ],
+                  "type": "tag"
                 }
               ],
-              "measurement": "system",
+              "measurement": "net",
               "orderByTime": "ASC",
               "policy": "default",
-              "query": "SELECT derivative(last(\"bytes_sent\"), 1s) + derivative(last(\"bytes_received\"), 1s) FROM \"mysql\" WHERE $timeFilter GROUP BY time(1s), \"host\"",
-              "rawQuery": false,
+              "query": "SELECT non_negative_derivative(max(\"bytes_recv\"), 1s) + non_negative_derivative(max(\"bytes_sent\"), 1s) FROM \"net\" WHERE $timeFilter GROUP BY time(1s), \"host\", \"interface\"",
+              "rawQuery": true,
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
                 [
                   {
                     "params": [
-                      "connections"
+                      "bytes_recv"
                     ],
                     "type": "field"
                   },
                   {
                     "params": [],
-                    "type": "last"
+                    "type": "max"
                   },
                   {
                     "params": [
                       "1s"
                     ],
-                    "type": "derivative"
+                    "type": "non_negative_derivative"
                   }
                 ]
               ],
@@ -738,7 +934,7 @@
               "label": null,
               "logBase": 1,
               "max": null,
-              "min": null,
+              "min": "0",
               "show": true
             },
             {
@@ -750,109 +946,6 @@
               "show": true
             }
           ]
-        }
-      ],
-      "repeat": null,
-      "repeatIteration": null,
-      "repeatRowId": null,
-      "showTitle": false,
-      "title": "Dashboard Row",
-      "titleSize": "h6"
-    },
-    {
-      "collapse": false,
-      "height": 250,
-      "panels": [
-        {
-          "columns": [],
-          "fontSize": "100%",
-          "id": 7,
-          "links": [],
-          "pageSize": null,
-          "scroll": true,
-          "showHeader": true,
-          "sort": {
-            "col": 0,
-            "desc": true
-          },
-          "span": 12,
-          "styles": [
-            {
-              "alias": "Time",
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "pattern": "Time",
-              "type": "hidden"
-            },
-            {
-              "alias": "Host",
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-              ],
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "decimals": 2,
-              "pattern": "host",
-              "thresholds": [],
-              "type": "number",
-              "unit": "short"
-            },
-            {
-              "alias": "Host",
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-              ],
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "decimals": 2,
-              "pattern": "last",
-              "thresholds": [],
-              "type": "number",
-              "unit": "s"
-            }
-          ],
-          "targets": [
-            {
-              "alias": "$tag_host",
-              "dsType": "influxdb",
-              "groupBy": [
-                {
-                  "params": [
-                    "host"
-                  ],
-                  "type": "tag"
-                }
-              ],
-              "measurement": "system",
-              "orderByTime": "ASC",
-              "policy": "default",
-              "query": "SELECT last(\"uptime\") FROM \"mysql\" WHERE $timeFilter GROUP BY \"host\"",
-              "rawQuery": false,
-              "refId": "A",
-              "resultFormat": "table",
-              "select": [
-                [
-                  {
-                    "params": [
-                      "uptime"
-                    ],
-                    "type": "field"
-                  },
-                  {
-                    "params": [],
-                    "type": "last"
-                  }
-                ]
-              ],
-              "tags": []
-            }
-          ],
-          "title": "MySQL Uptime",
-          "transform": "table",
-          "type": "table"
         }
       ],
       "repeat": null,
@@ -900,5 +993,5 @@
   },
   "timezone": "",
   "title": "Cross Server Graphs",
-  "version": 9
+  "version": 23
 }

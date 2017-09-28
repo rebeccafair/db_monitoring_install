@@ -48,7 +48,7 @@
   "rows": [
     {
       "collapse": false,
-      "height": 260,
+      "height": 258,
       "panels": [
         {
           "aliasColors": {},
@@ -138,6 +138,121 @@
           "timeFrom": null,
           "timeShift": null,
           "title": "Critical Alerts",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "decimals": null,
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "${DS_INFLUXDB_KAPACITOR}",
+          "fill": 1,
+          "id": 3,
+          "legend": {
+            "alignAsTable": true,
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_host",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$__interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "host"
+                  ],
+                  "type": "tag"
+                }
+              ],
+              "measurement": "alerts",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "message"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "count"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "level",
+                  "operator": "=",
+                  "value": "CRITICAL"
+                }
+              ]
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Critical Alerts By Host",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -304,7 +419,7 @@
               "measurement": "alerts",
               "orderByTime": "ASC",
               "policy": "default",
-              "query": "SELECT \"time\", \"alertName\", \"duration\", \"host\", \"level\", \"message\", \"triggerType\" FROM \"alerts\" WHERE $timeFilter",
+              "query": "SELECT \"time\", \"alertName\", \"value\", \"duration\", \"host\", \"level\", \"message\", \"triggerType\" FROM \"alerts\" WHERE $timeFilter",
               "rawQuery": true,
               "refId": "A",
               "resultFormat": "table",
@@ -373,5 +488,5 @@
   },
   "timezone": "",
   "title": "Alerts Overview",
-  "version": 6
+  "version": 8
 }

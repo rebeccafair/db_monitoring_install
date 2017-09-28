@@ -47,7 +47,7 @@
   "rows": [
     {
       "collapse": false,
-      "height": 278,
+      "height": 342,
       "panels": [
         {
           "aliasColors": {},
@@ -61,11 +61,8 @@
             "alignAsTable": true,
             "avg": true,
             "current": false,
-            "hideEmpty": true,
-            "hideZero": true,
             "max": true,
             "min": true,
-            "rightSide": true,
             "show": true,
             "total": false,
             "values": true
@@ -80,12 +77,12 @@
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "span": 6,
+          "span": 12,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "alias": "$tag_user",
+              "alias": "Response Time",
               "dsType": "influxdb",
               "groupBy": [
                 {
@@ -93,140 +90,12 @@
                     "1s"
                   ],
                   "type": "time"
-                },
-                {
-                  "params": [
-                    "user"
-                  ],
-                  "type": "tag"
                 }
               ],
-              "measurement": "mysql_userstat",
+              "measurement": "mysql_query_response",
               "orderByTime": "ASC",
               "policy": "default",
-              "refId": "A",
-              "resultFormat": "time_series",
-              "select": [
-                [
-                  {
-                    "params": [
-                      "total_connections"
-                    ],
-                    "type": "field"
-                  },
-                  {
-                    "params": [],
-                    "type": "max"
-                  },
-                  {
-                    "params": [
-                      "1s"
-                    ],
-                    "type": "non_negative_derivative"
-                  }
-                ]
-              ],
-              "tags": [
-                {
-                  "key": "host",
-                  "operator": "=~",
-                  "value": "/^$Host$/"
-                }
-              ]
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Top Users By Connections",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "none",
-              "label": "Connections / s",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
-          "fill": 1,
-          "id": 6,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "hideEmpty": true,
-            "hideZero": true,
-            "max": true,
-            "min": true,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "$tag_user",
-              "dsType": "influxdb",
-              "groupBy": [
-                {
-                  "params": [
-                    "1s"
-                  ],
-                  "type": "time"
-                },
-                {
-                  "params": [
-                    "user"
-                  ],
-                  "type": "tag"
-                }
-              ],
-              "measurement": "mysql_userstat",
-              "orderByTime": "ASC",
-              "policy": "default",
-              "query": "SELECT non_negative_derivative(max(\"bytes_sent\"), 1s) + non_negative_derivative(max(\"bytes_received\"), 1s) FROM \"mysql_userstat\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time(1s), \"user\"",
+              "query": "SELECT non_negative_derivative(max(\"sum_total\"), 1s)/non_negative_derivative(max(\"sum_count\"), 1s) FROM \"mysql_query_response\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time(1s)",
               "rawQuery": true,
               "refId": "A",
               "resultFormat": "time_series",
@@ -234,7 +103,7 @@
                 [
                   {
                     "params": [
-                      "bytes_sent"
+                      "sum_total"
                     ],
                     "type": "field"
                   },
@@ -262,376 +131,10 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Top Users By Traffic",
+          "title": "Average Query Response Time",
           "tooltip": {
             "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "Bps",
-              "label": "",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
-          "fill": 1,
-          "id": 7,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "hideEmpty": true,
-            "hideZero": true,
-            "max": true,
-            "min": true,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "$tag_user",
-              "dsType": "influxdb",
-              "groupBy": [
-                {
-                  "params": [
-                    "1s"
-                  ],
-                  "type": "time"
-                },
-                {
-                  "params": [
-                    "user"
-                  ],
-                  "type": "tag"
-                }
-              ],
-              "measurement": "mysql_userstat",
-              "orderByTime": "ASC",
-              "policy": "default",
-              "refId": "A",
-              "resultFormat": "time_series",
-              "select": [
-                [
-                  {
-                    "params": [
-                      "rows_read"
-                    ],
-                    "type": "field"
-                  },
-                  {
-                    "params": [],
-                    "type": "max"
-                  },
-                  {
-                    "params": [
-                      "1s"
-                    ],
-                    "type": "non_negative_derivative"
-                  }
-                ]
-              ],
-              "tags": [
-                {
-                  "key": "host",
-                  "operator": "=~",
-                  "value": "/^$Host$/"
-                }
-              ]
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Top Users By Rows Fetched/Read",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "none",
-              "label": "Rows / s",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
-          "fill": 1,
-          "id": 8,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "hideEmpty": true,
-            "hideZero": true,
-            "max": true,
-            "min": true,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "$tag_user",
-              "dsType": "influxdb",
-              "groupBy": [
-                {
-                  "params": [
-                    "1s"
-                  ],
-                  "type": "time"
-                },
-                {
-                  "params": [
-                    "user"
-                  ],
-                  "type": "tag"
-                }
-              ],
-              "measurement": "mysql_userstat",
-              "orderByTime": "ASC",
-              "policy": "default",
-              "refId": "A",
-              "resultFormat": "time_series",
-              "select": [
-                [
-                  {
-                    "params": [
-                      "rows_updated"
-                    ],
-                    "type": "field"
-                  },
-                  {
-                    "params": [],
-                    "type": "max"
-                  },
-                  {
-                    "params": [
-                      "1s"
-                    ],
-                    "type": "non_negative_derivative"
-                  }
-                ]
-              ],
-              "tags": [
-                {
-                  "key": "host",
-                  "operator": "=~",
-                  "value": "/^$Host$/"
-                }
-              ]
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Top Users By Rows Updated",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "none",
-              "label": "Rows / s",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
-          "fill": 1,
-          "id": 9,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "hideEmpty": true,
-            "hideZero": true,
-            "max": true,
-            "min": true,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "$tag_user",
-              "dsType": "influxdb",
-              "groupBy": [
-                {
-                  "params": [
-                    "1s"
-                  ],
-                  "type": "time"
-                },
-                {
-                  "params": [
-                    "user"
-                  ],
-                  "type": "tag"
-                }
-              ],
-              "measurement": "mysql_userstat",
-              "orderByTime": "ASC",
-              "policy": "default",
-              "refId": "A",
-              "resultFormat": "time_series",
-              "select": [
-                [
-                  {
-                    "params": [
-                      "busy_time"
-                    ],
-                    "type": "field"
-                  },
-                  {
-                    "params": [],
-                    "type": "max"
-                  },
-                  {
-                    "params": [
-                      "1s"
-                    ],
-                    "type": "non_negative_derivative"
-                  }
-                ]
-              ],
-              "tags": [
-                {
-                  "key": "host",
-                  "operator": "=~",
-                  "value": "/^$Host$/"
-                }
-              ]
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Top Users By Busy Time",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
+            "sort": 0,
             "value_type": "individual"
           },
           "type": "graph",
@@ -645,10 +148,10 @@
           "yaxes": [
             {
               "format": "s",
-              "label": "",
+              "label": null,
               "logBase": 1,
               "max": null,
-              "min": "0",
+              "min": null,
               "show": true
             },
             {
@@ -668,13 +171,11 @@
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
           "fill": 1,
-          "id": 10,
+          "id": 4,
           "legend": {
             "alignAsTable": true,
             "avg": true,
             "current": false,
-            "hideEmpty": true,
-            "hideZero": true,
             "max": true,
             "min": true,
             "rightSide": true,
@@ -692,12 +193,12 @@
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "span": 6,
+          "span": 12,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "alias": "$tag_user",
+              "alias": "< 100ms",
               "dsType": "influxdb",
               "groupBy": [
                 {
@@ -705,24 +206,205 @@
                     "1s"
                   ],
                   "type": "time"
-                },
-                {
-                  "params": [
-                    "user"
-                  ],
-                  "type": "tag"
                 }
               ],
-              "measurement": "mysql_userstat",
+              "hide": true,
+              "measurement": "mysql_query_response",
               "orderByTime": "ASC",
               "policy": "default",
+              "query": "SELECT non_negative_derivative(max(\"1us_count\"), 1s) + non_negative_derivative(max(\"10us_count\"), 1s) + non_negative_derivative(max(\"100us_count\"), 1s) + non_negative_derivative(max(\"1ms_count\"), 1s) + non_negative_derivative(max(\"10ms_count\"), 1s) + non_negative_derivative(max(\"100ms_count\"), 1s) FROM \"mysql_query_response\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time(1s)",
+              "rawQuery": true,
+              "refId": "D",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "1000s_count"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "max"
+                  },
+                  {
+                    "params": [
+                      "1s"
+                    ],
+                    "type": "non_negative_derivative"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "host",
+                  "operator": "=~",
+                  "value": "/^$Host$/"
+                }
+              ]
+            },
+            {
+              "alias": "100ms - 1s",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1s"
+                  ],
+                  "type": "time"
+                }
+              ],
+              "measurement": "mysql_query_response",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT non_negative_derivative(max(\"sum_total\"), 1s)/non_negative_derivative(max(\"sum_count\"), 1s) FROM \"mysql_query_response\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time(1s)",
+              "rawQuery": false,
+              "refId": "B",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "1s_count"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "max"
+                  },
+                  {
+                    "params": [
+                      "1s"
+                    ],
+                    "type": "non_negative_derivative"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "host",
+                  "operator": "=~",
+                  "value": "/^$Host$/"
+                }
+              ]
+            },
+            {
+              "alias": "1s - 10s",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1s"
+                  ],
+                  "type": "time"
+                }
+              ],
+              "measurement": "mysql_query_response",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT non_negative_derivative(max(\"sum_total\"), 1s)/non_negative_derivative(max(\"sum_count\"), 1s) FROM \"mysql_query_response\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time(1s)",
+              "rawQuery": false,
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
                 [
                   {
                     "params": [
-                      "cpu_time"
+                      "10s_count"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "max"
+                  },
+                  {
+                    "params": [
+                      "1s"
+                    ],
+                    "type": "non_negative_derivative"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "host",
+                  "operator": "=~",
+                  "value": "/^$Host$/"
+                }
+              ]
+            },
+            {
+              "alias": "10s - 100s",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1s"
+                  ],
+                  "type": "time"
+                }
+              ],
+              "measurement": "mysql_query_response",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT non_negative_derivative(max(\"sum_total\"), 1s)/non_negative_derivative(max(\"sum_count\"), 1s) FROM \"mysql_query_response\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time(1s)",
+              "rawQuery": false,
+              "refId": "C",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "100s_count"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "max"
+                  },
+                  {
+                    "params": [
+                      "1s"
+                    ],
+                    "type": "non_negative_derivative"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "host",
+                  "operator": "=~",
+                  "value": "/^$Host$/"
+                }
+              ]
+            },
+            {
+              "alias": "> 100s",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1s"
+                  ],
+                  "type": "time"
+                }
+              ],
+              "measurement": "mysql_query_response",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT non_negative_derivative(max(\"1000s_count\"), 1s) + non_negative_derivative(max(\"10000s_count\"), 1s) + non_negative_derivative(max(\"100000s_count\"), 1s) + non_negative_derivative(max(\"1000000s_count\"), 1s) + non_negative_derivative(max(\"too_long_count\"), 1s) FROM \"mysql_query_response\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time(1s)",
+              "rawQuery": true,
+              "refId": "E",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "1000s_count"
                     ],
                     "type": "field"
                   },
@@ -750,10 +432,10 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Top Users By CPU Time",
+          "title": "Query Response Time Distribution",
           "tooltip": {
             "shared": true,
-            "sort": 2,
+            "sort": 0,
             "value_type": "individual"
           },
           "type": "graph",
@@ -766,11 +448,11 @@
           },
           "yaxes": [
             {
-              "format": "s",
-              "label": "",
+              "format": "ops",
+              "label": null,
               "logBase": 1,
               "max": null,
-              "min": "0",
+              "min": null,
               "show": true
             },
             {
@@ -784,7 +466,7 @@
           ]
         },
         {
-          "content": "Note: User statistics are only available in MariaDB. This requires `userstat = 'ON'`",
+          "content": "Note: The Query Response Time plugin is required for these metrics and is only available in MariaDB. It requires `query_response_time_stats = 'ON'`",
           "height": "30px",
           "id": 5,
           "links": [],
@@ -817,7 +499,7 @@
         "multi": false,
         "name": "Host",
         "options": [],
-        "query": "show tag values on \"telegraf\" from \"mysql_userstat\" with key = \"host\"",
+        "query": "show tag values on \"telegraf\" from \"mysql_query_response\" with key = \"host\"",
         "refresh": 1,
         "regex": "",
         "sort": 0,
@@ -859,6 +541,6 @@
     ]
   },
   "timezone": "",
-  "title": "MariaDB User Statistics",
-  "version": 9
+  "title": "MariaDB Query Response Time",
+  "version": 16
 }

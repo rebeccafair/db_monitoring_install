@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "4.5.1"
+      "version": "4.5.2"
     },
     {
       "type": "panel",
@@ -49,6 +49,7 @@
           "dashLength": 10,
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
+          "description": "NOTE: InnoDB checkpoint age is obtained by 'show engine innodb status', this is currently not implemented in Telegraf",
           "fill": 1,
           "id": 14,
           "interval": "> 1m",
@@ -195,6 +196,7 @@
           "dashLength": 10,
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
+          "description": "NOTE: InnoDB max transaction ID is obtained by 'show engine innodb status', this is currently not implemented in Telegraf",
           "fill": 1,
           "id": 13,
           "interval": "> 1m",
@@ -2318,6 +2320,7 @@
           "dashLength": 10,
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
+          "description": "NOTE: InnoDB buffer metrics are obtained via \"show engine innodb status\" command, this is currently not collected by Telegraf",
           "fill": 1,
           "id": 10,
           "interval": "> 1m",
@@ -2777,5 +2780,5 @@
   },
   "timezone": "",
   "title": "MySQL InnoDB Metrics",
-  "version": 44
+  "version": 47
 }
