@@ -1,5 +1,5 @@
 {
-  "name":"InfluxDB",
+  "name":"InfluxDB Telegraf",
   "type":"influxdb",
   "url":"http://localhost:8086",
   "access":"proxy",
