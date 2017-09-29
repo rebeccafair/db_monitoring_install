@@ -3,7 +3,7 @@ To get a fully working TICK stack to monitor a MySQL database there are several 
 
 1. [Install InfluxDB](#1-install-influxdb)
 2. [Get some data into InfluxDB](#2-get-some-data-into-influxdb)
-    1. [Install MySQL](#i-install-mysql)
+    1. [Install MySQL or MariaDB](#i-install-mysql-or-mariadb)
     2. [Install Telegraf on MySQL host](#ii-install-telegraf)
 3. [Install Kapacitor](#3-install-kapacitor)
 4. [Install a Web UI](#4-install-a-web-ui)
@@ -35,7 +35,8 @@ To get some data into InfluxDB we need a MySQL database that we want to
 monitor. If you already have a MySQL instance installed skip to step ii. The
 MySQL server should preferably be on a different host to InfluxDB.
 
-### i. Install MySQL
+### i. Install MySQL or MariaDB
+### MySQL
 Download and install RPM package
 ```
 wget https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
@@ -62,9 +63,13 @@ alter user 'root'@'localhost' identified by 'root';
 
 Now set the long query time to some appropriate value (default 10.0s), change the slow query log file and switch slow query logging on
 ```
-mysql -u root -proot -e "set global slow_query_log_file = "/var/lib/mysql/slow.log";"
 mysql -u root -proot -e "set global long_query_time = 1.0;"
 mysql -u root -proot -e "set global slow_query_log = 'ON';"
+```
+
+Set some other variables for monitoring:
+```
+mysql -u root -proot -e 'set global innodb_monitor_enable=all;'
 ```
 
 To get some dummy data into MySQL you can use the following GitHub repo:
@@ -76,20 +81,58 @@ mysql -u root -proot < employees_partitioned.sql
 
 To generate some random queries on this DB, first create a reader user:  
 ```
-mysql -u root -proot -e "create user 'reader' identified by 'reader';"
-mysql -u root -proot -e "grant select on employees.* to reader;"
+mysql -u root -proot -e "create user 'reader'@'localhost' identified by 'reader';"
+mysql -u root -proot -e "grant select on employees.* to 'reader'@'localhost';"
 ```
 Now install python MySQL module: `sudo yum install MySQL-python`  
 Run the provided script `query.py` in the background to generate random queries every 0-60 seconds:  
 `nohup python mysql/query.py > /dev/null 2>&1 &`  
 To see the process again: `ps ax | grep query.py`
 
+### MariaDB
+Download and install MariaDB via yum. First add the MariaDB repo to the yum repository:  
+```
+sudo cp mariadb/MariaDB.repo /etc/yum.repos.d/
+sudo yum install -y MariaDB-server MariaDB-client
+sudo systemctl start mariadb
+mysqladmin -u root password 'root'
+```
+
+Now set variables for monitoring:
+```
+mysql -u root -proot -e 'set global slow_query_log="ON";'
+mysql -u root -proot -e 'set global long_query_time=1.0;'
+mysql -u root -proot -e 'set global userstat="ON";'
+mysql -u root -proot -e 'install soname "query_response_time";'
+mysql -u root -proot -e 'set global query_response_time_stats="ON";'
+mysql -u root -proot -e 'set global innodb_monitor_enable=all;'
+```
+
+To get some dummy data into MariaDB you can use the following GitHub repo:
+```
+git clone https://github.com/datacharmer/test_db.git
+cd test_db
+mysql -u root -proot < employees_partitioned.sql
+```
+
+To generate some random queries on this DB, first create a reader user:
+```
+mysql -u root -proot -e "create user 'reader'@'localhost' identified by 'reader';"
+mysql -u root -proot -e "grant select on employees.* to 'reader'@'localhost';"
+```
+Now install python MySQL module: `sudo yum install -y MySQL-python`
+Run the provided script `query.py` in the background to generate random queries every 0-60 seconds:
+`nohup python mysql/query.py > /dev/null 2>&1 &`
+To see the process again: `ps ax | grep query.py`
+
+
+
 ### ii. Install Telegraf
 First on the InfluxDB host, create a telegraf DB (with retention policy) and user in InfluxDB to allow Telegraf to write metrics:
 ```
 influx -username admin -password 'admin' -execute 'create database telegraf'
-influx -username admin -password 'admin' -execute 'create retention policy "30_days" on "telegraf"' duration 30d replication 1 default'
-influx -username admin -password 'admin' -execute 'create user telegraf with password "telegraf"'
+influx -username admin -password 'admin' -execute 'create retention policy "30_days" on "telegraf" duration 30d replication 1 default'
+influx -username admin -password 'admin' -execute "create user telegraf with password 'telegraf'"
 influx -username admin -password 'admin' -execute 'grant write on telegraf to telegraf'
 ```
 
@@ -101,18 +144,13 @@ mysql -u root -proot -e "grant select, process, replication client on *.* to 'te
 On the MySQL host, download and install desired Telegraf version from https://repos.influxdata.com/rhel/6/x86_64/stable/ (recommended 1.3.5):
 ```
 wget https://repos.influxdata.com/rhel/6/x86_64/stable/telegraf-1.3.5-1.x86_64.rpm
-sudo yum localinstall telegraf-1.3.5-1.x86_64.rpm
+sudo yum localinstall -y telegraf-1.3.5-1.x86_64.rpm
 rm telegraf-1.3.5-1.x86_64.rpm
 ```
 
 To collect custom MySQL data/metrics, copy the python script provided to the Telegraf plugin directory:
 ```
 sudo cp telegraf/query_mysql.py /etc/telegraf/telegraf.d/
-```
-
-Give Telegraf read access to any files that need to be monitored (such as the slow query log):
-```
-sudo setfacl -m 'user:telegraf:r' /tmp/slow.log
 ```
 
 Edit the configuration file at `/etc/telegraf/telegraf.conf` and make the following configuration changes:  
@@ -133,8 +171,13 @@ mysql -u root -proot -e "set global long_query_time = 1.0;"
 ```
 As currently Telegraf can only read single-line log events, we need to merge the multi-line events in the slow log to one line. To do this run the transform_slowlog.sh script:
 ```
-nohup sudo bash transform_slowlog.sh > /tmp/slow.log 2> /dev/null &
+nohup sudo bash mysql/transform_slowlog.sh > /tmp/slow.log 2> /dev/null &
 ```
+Give Telegraf read access to this file:
+```
+sudo setfacl -m 'user:telegraf:r' /tmp/slow.log
+```
+
 Now change the Telegraf configuration to read the newly formatted slow log. In the `[[inputs.logparser]]` section set `files = ["/tmp/slow.log"]` , `patterns = ["# Time: %{DATA:timestamp} # User@Host: %{NOTSPACE:query_user:string} @ %{NOTSPACE:query_host:string} %{GREEDYDATA} # Query_time: %{NUMBER:query_time:float}  Lock_time: %{NUMBER:lock_time:float} Rows_sent: %{INT:rows_sent:int}  Rows_examined: %{INT:rows_examined:int} SET timestamp=%{INT};%{GREEDYDATA:query:string};"]` and `measurement = "mysql_slow"`
 
 Start Telegraf service: `sudo systemctl start telegraf`
@@ -152,7 +195,7 @@ influx -username admin -password 'admin' -execute 'create retention policy "30_d
 On the InfluxDB host, download and install desired version from https://repos.influxdata.com/rhel/6/x86_64/stable/ (recommended 1.3.2):
 ```
 wget https://repos.influxdata.com/rhel/6/x86_64/stable/kapacitor-1.3.2.x86_64.rpm
-sudo yum localinstall kapacitor-1.3.2.x86_64.rpm
+sudo yum localinstall -y kapacitor-1.3.2.x86_64.rpm
 rm kapacitor-1.3.2.x86_64.rpm
 ```
 
@@ -182,9 +225,13 @@ influx -username admin -password 'admin' -execute "grant read on kapacitor to gr
 Download and install desired version from https://s3-us-west-2.amazonaws.com/grafana-releases/ (recommended 4.4.3):
 ```
 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-4.4.3-1.x86_64.rpm
-sudo yum localinstall grafana-4.4.3-1.x86_64.rpm
+sudo yum localinstall -y grafana-4.4.3-1.x86_64.rpm
 rm grafana-4.4.3-1.x86_64.rpm
 ```
+
+In the Grafana configuration file at `/etc/grafana/grafana.ini`:  
+Under `[analytics]` set `reporting_enabled = false`  
+Under `[auth.anonymous]` set `enabled = true`,`org_name = STFC` and `org_role = Viewer`
 
 Start the Grafana service: `sudo systemctl start grafana-server`
 
@@ -193,11 +240,7 @@ Post the InfluxDB data sources to grafana:
 `curl -XPOST 'http://admin:admin@grafanahost:3000/api/datasources' -H 'Content-Type: application/json' -d @grafana/data_sources/influxdb_kapacitor.json`
 
 Change the default organisation name:  
-`curl -XPUT 'http://admin:admin@vm19.nubes.stfc.ac.uk:3000/api/org' -H 'Content-Type: application/json' -d '{ "name":"STFC"}'`
-
-In the Grafana configuration file at `/etc/grafana/grafana.ini`:  
-Under `[analytics]` set `reporting_enabled = false`  
-Under `[auth.anonymous]` set `enabled = true`,`org_name = STFC` and `org_role = Viewer`
+`curl -XPUT 'http://admin:admin@grafanahost:3000/api/org' -H 'Content-Type: application/json' -d '{ "name":"STFC"}'`
 
 Access the Grafana web interface on port 3000 and log in with username and password
 'admin'. Click on the grafana symbol in the top-left and go to Dashboards >
