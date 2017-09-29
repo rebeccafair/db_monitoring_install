@@ -13,7 +13,7 @@ To get a fully working TICK stack to monitor a MySQL database there are several 
 ## 1. Install InfluxDB
 Download and install desired version from https://repos.influxdata.com/rhel/6/x86_64/stable/ (recommended 1.3.5):
 ```
-wget https://repos.influxdata.com/rhel/6/x86_64/stable/influxdb-1.3.5.x86_64.rpm`
+wget https://repos.influxdata.com/rhel/6/x86_64/stable/influxdb-1.3.5.x86_64.rpm
 sudo yum localinstall influxdb-1.3.5.x86_64.rpm
 rm influxdb-1.3.5.x86_64.rpm
 ```
@@ -188,8 +188,9 @@ rm grafana-4.4.3-1.x86_64.rpm
 
 Start the Grafana service: `sudo systemctl start grafana-server`
 
-Post the InfluxDB data source to grafana:  
-`curl -XPOST 'http://admin:admin@vm19.nubes.stfc.ac.uk:3000/api/datasources' -H 'Content-Type: application/json' -d @grafana/data_sources/influxdb.json`
+Post the InfluxDB data sources to grafana:  
+`curl -XPOST 'http://admin:admin@grafanahost:3000/api/datasources' -H 'Content-Type: application/json' -d @grafana/data_sources/influxdb_telegraf.json`
+`curl -XPOST 'http://admin:admin@grafanahost:3000/api/datasources' -H 'Content-Type: application/json' -d @grafana/data_sources/influxdb_kapacitor.json`
 
 Change the default organisation name:  
 `curl -XPUT 'http://admin:admin@vm19.nubes.stfc.ac.uk:3000/api/org' -H 'Content-Type: application/json' -d '{ "name":"STFC"}'`

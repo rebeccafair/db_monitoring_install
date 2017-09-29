@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_INFLUXDB",
-      "label": "InfluxDB",
+      "name": "DS_INFLUXDB_TELEGRAF",
+      "label": "InfluxDB Telegraf",
       "description": "",
       "type": "datasource",
       "pluginId": "influxdb",
@@ -58,7 +58,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "decimals": 2,
           "format": "s",
           "gauge": {
@@ -158,7 +158,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "format": "none",
           "gauge": {
             "maxValue": 100,
@@ -247,7 +247,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "decimals": 2,
           "format": "bytes",
           "gauge": {
@@ -343,7 +343,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "decimals": 2,
           "format": "percent",
           "gauge": {
@@ -435,7 +435,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "fill": 1,
           "id": 5,
           "legend": {
@@ -542,7 +542,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "fill": 1,
           "id": 6,
           "legend": {
@@ -702,7 +702,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "fill": 10,
           "id": 7,
           "legend": {
@@ -1133,7 +1133,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "fill": 4,
           "id": 8,
           "legend": {
@@ -1380,7 +1380,7 @@
           "bars": true,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.kernel]]' plugin be uncommented in the Telegraf configuration",
           "fill": 4,
           "id": 9,
@@ -1498,7 +1498,7 @@
           "bars": true,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.processes]]' plugin be uncommented in the Telegraf configuration",
           "fill": 4,
           "id": 10,
@@ -1650,7 +1650,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.kernel]]' plugin be uncommented in the Telegraf configuration",
           "fill": 2,
           "id": 11,
@@ -1768,7 +1768,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.kernel]]' plugin be uncommented in the Telegraf configuration",
           "fill": 2,
           "id": 12,
@@ -1886,7 +1886,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.net]]' plugin be uncommented in the Telegraf configuration",
           "fill": 2,
           "id": 13,
@@ -2055,7 +2055,7 @@
           "bars": true,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.net]]' plugin be uncommented in the Telegraf configuration",
           "fill": 2,
           "id": 14,
@@ -2219,7 +2219,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "",
           "fill": 4,
           "id": 15,
@@ -2376,7 +2376,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.kernel_vmstat]]' plugin be uncommented in the Telegraf configuration",
           "fill": 4,
           "id": 16,
@@ -2545,7 +2545,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires the '[[inputs.kernel_vmstat]]' plugin be uncommented in the Telegraf configuration",
           "fill": 2,
           "id": 17,
@@ -2726,7 +2726,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_INFLUXDB}",
+        "datasource": "${DS_INFLUXDB_TELEGRAF}",
         "hide": 0,
         "includeAll": false,
         "label": "Host",

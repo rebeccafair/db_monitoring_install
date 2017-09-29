@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_INFLUXDB",
-      "label": "InfluxDB",
+      "name": "DS_INFLUXDB_TELEGRAF",
+      "label": "InfluxDB Telegraf",
       "description": "",
       "type": "datasource",
       "pluginId": "influxdb",
@@ -51,7 +51,7 @@
       "panels": [
         {
           "columns": [],
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires 'gather_table_schema' = true in Telegraf MySQL plugin configuration",
           "fontSize": "100%",
           "id": 2,
@@ -197,7 +197,7 @@
         },
         {
           "columns": [],
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires 'gather_table_schema' = true in Telegraf MySQL plugin configuration",
           "fontSize": "100%",
           "id": 3,
@@ -346,7 +346,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires 'gather_table_schema' = true in Telegraf MySQL plugin configuration",
           "fill": 1,
           "id": 4,
@@ -533,7 +533,7 @@
         },
         {
           "columns": [],
-          "datasource": "${DS_INFLUXDB}",
+          "datasource": "${DS_INFLUXDB_TELEGRAF}",
           "description": "This requires 'gather_table_schema' = true in Telegraf MySQL plugin configuration",
           "fontSize": "100%",
           "id": 5,
@@ -694,7 +694,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_INFLUXDB}",
+        "datasource": "${DS_INFLUXDB_TELEGRAF}",
         "hide": 0,
         "includeAll": false,
         "label": "Host",
