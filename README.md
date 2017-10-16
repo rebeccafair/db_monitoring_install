@@ -160,7 +160,8 @@ Uncomment `[[inputs.mysql]]` to enable MySQL metric collection and set `servers`
 In the `[[inputs.mysql]]` section set `gather_innodb_metrics = true` to collect lots of InnoDB metrics, these are collected by the command `SELECT NAME, COUNT FROM information_schema.INNODB_METRICS WHERE status='enabled';`. Many are enabled by default, but to get the full set of InnoDB metrics use `set global innodb_monitor_enable = 'all';` in the MySQL shell. These are required by many of the graphs in the 'InnoDB Metrics Advanced' Grafana dashboard.  
 In the `[[inputs.mysql]]` section set `interval_slow` to a value higher than 0 to collect global status variables.  
 In the `[[inputs.mysql]]` section set `gather_process_list = true` to collect information about thread activity.  
-Uncomment any other desired MySQL metrics to be collected.  
+Uncomment any other desired MySQL metrics to be collected. NOTE: For MariaDB ensure `gather_user_statistics = false` as it causes an error (which also stops other metrics being collected) see https://github.com/influxdata/telegraf/issues/2910
+
 In the `[[inputs.exec]]` section set `commands = ["python /etc/telegraf/telegraf.d/query_mysql.py"]` and `data_format = "influx"` to enable collection of custom MySQL data such as blocking sessions. Command-line arguments can also be used to change the script logging level etc., see the script for details.  
 
 ### Monitoring the slow log
