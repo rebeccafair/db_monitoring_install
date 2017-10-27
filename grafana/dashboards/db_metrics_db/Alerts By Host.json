@@ -371,7 +371,7 @@
         "multi": false,
         "name": "Host",
         "options": [],
-        "query": "show tag values on \"kapacitor\" from \"alerts\" with key = \"host\"",
+        "query": "show tag values on \"db_alerts\" from \"alerts\" with key = \"host\"",
         "refresh": 1,
         "regex": "",
         "sort": 0,

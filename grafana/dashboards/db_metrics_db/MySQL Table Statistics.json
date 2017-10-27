@@ -701,7 +701,7 @@
         "multi": false,
         "name": "Host",
         "options": [],
-        "query": "show tag values on \"telegraf\" from \"mysql\" with key = \"host\"",
+        "query": "show tag values on \"db_metrics\" from \"mysql\" with key = \"host\"",
         "refresh": 1,
         "regex": "",
         "sort": 0,
