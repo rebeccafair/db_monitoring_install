@@ -53,7 +53,7 @@
         {
           "columns": [],
           "datasource": "${DS_INFLUXDB_TELEGRAF}",
-          "description": "Requires slow_query_log = 'ON' in MySQL configuration and the Telegraf logparser plugin to be configured to monitor the slow query log file",
+          "description": "Requires slow_query_log = 'ON' and log_output='TABLE' in MySQL configuration and the Telegraf exec plugin to be configured with a script to extract the fields from the mysql.slow_log table",
           "fontSize": "100%",
           "id": 1,
           "links": [],
@@ -70,67 +70,7 @@
               "alias": "Time",
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "pattern": "Time",
-              "type": "date"
-            },
-            {
-              "alias": "Query",
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-              ],
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "decimals": 2,
-              "pattern": "query",
-              "thresholds": [],
-              "type": "string",
-              "unit": "short"
-            },
-            {
-              "alias": "User",
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-              ],
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "decimals": 2,
-              "pattern": "query_user",
-              "thresholds": [],
-              "type": "string",
-              "unit": "short"
-            },
-            {
-              "alias": "Host",
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-              ],
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "decimals": 2,
-              "pattern": "query_host",
-              "thresholds": [],
-              "type": "string",
-              "unit": "short"
-            },
-            {
-              "alias": "Query Time",
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-              ],
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "decimals": 2,
-              "pattern": "query_time",
-              "thresholds": [],
-              "type": "number",
-              "unit": "s"
+              "type": "hidden"
             },
             {
               "alias": "Lock Time",
@@ -140,11 +80,11 @@
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
               ],
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "dateFormat": "h:mm:ss.f",
               "decimals": 2,
               "pattern": "lock_time",
               "thresholds": [],
-              "type": "number",
+              "type": "string",
               "unit": "s"
             },
             {
@@ -178,6 +118,96 @@
               "unit": "short"
             },
             {
+              "alias": "User Host",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "user_host",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "Query Time",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "query_time",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "DB",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "db",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
+            },
+            {
+              "alias": "Query Text",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "sql_text",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
+            },
+            {
+              "alias": "Thread Id",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 0,
+              "pattern": "thread_id",
+              "thresholds": [],
+              "type": "number",
+              "unit": "none"
+            },
+            {
+              "alias": "Start Time",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "start_time",
+              "thresholds": [],
+              "type": "date",
+              "unit": "short"
+            },
+            {
               "alias": "",
               "colorMode": null,
               "colors": [
@@ -199,7 +229,7 @@
               "measurement": "mysql_slow",
               "orderByTime": "ASC",
               "policy": "default",
-              "query": "SELECT \"query\", \"query_user\", \"query_host\",\"query_time\",\"lock_time\" FROM \"mysql_slow\" WHERE (\"host\" =~ /^$Host$/) AND \"query\" !~ /^SET timestamp=\\d*$/AND $timeFilter",
+              "query": "SELECT \"start_time\",\"user_host\",\"query_time\",\"lock_time\",\"rows_sent\",\"rows_examined\",\"db\",\"sql_text\",\"thread_id\" FROM \"mysql_slow\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter",
               "rawQuery": true,
               "refId": "A",
               "resultFormat": "table",
@@ -284,7 +314,7 @@
                 [
                   {
                     "params": [
-                      "query"
+                      "sql_text"
                     ],
                     "type": "field"
                   },
@@ -408,5 +438,5 @@
   },
   "timezone": "",
   "title": "MySQL Slow Log",
-  "version": 16
+  "version": 17
 }

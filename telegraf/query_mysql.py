@@ -6,6 +6,7 @@ import sys
 import os
 import time
 import gc
+import datetime
 
 def main():
 
@@ -38,6 +39,7 @@ def gather_metrics(db_host, db_port, db_user, db_pass):
     host = os.uname()[1]
 
     gather_blocking_sessions(cursor, host, v)
+    gather_slow_queries(cursor, host)
     gather_query_response_time(cursor, host)
     gather_userstats(cursor, host, v)
 
@@ -78,7 +80,26 @@ def gather_blocking_sessions(cursor, host, versions):
        (versions['major_version'] == 5 and versions['minor_version'] >= 5)):
 
         field_values = execute_query(cursor, query)
-        print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
+        print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, increment_ts=True)
+
+    logging.info('Successfully queried for blocking sessions')
+
+def gather_slow_queries(cursor, host):
+    query = ('select start_time, user_host, query_time, lock_time, rows_sent, rows_examined, db, '
+             'last_insert_id, insert_id, server_id, sql_text, thread_id from mysql.slow_log '
+             'where addtime(start_time,query_time) > date_sub(now(), interval 2 minute);')
+
+    measurement = 'mysql_slow'
+    tag_keys = ['host']
+    tag_values = [host]
+    field_keys = ['start_time', 'user_host', 'query_time', 'lock_time', 'rows_sent', 'rows_examined', 'db',
+                  'last_insert_id', 'insert_id', 'server_id', 'sql_text', 'thread_id']
+    field_types = ['string', 'string', 'string', 'string', 'integer', 'integer', 'string',
+                  'integer', 'integer', 'integer', 'string', 'integer']
+
+    if variable_is_on(cursor,'slow_query_log'):
+        field_values = execute_query(cursor, query)
+        print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, ts_field='start_time')
 
     logging.info('Successfully queried for blocking sessions')
 
@@ -183,14 +204,22 @@ def execute_query(cursor, query):
 
     return data
 
-def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types):
+def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, ts_field=None, ts_format=None, increment_ts=False):
     # If there are multiple measurements with the same name, tags, fields and timestamp they overwrite
     # each other in InfluxDB. Add 1ms to timestamp to avoid this. Requires precision = "1ms" in
     # Telegraf configuration
     timestamp = int(time.time())*(10**9)
-    increment_timestamp = not any(isinstance(x, list) for x in tag_values)
-    for i,vals in enumerate(field_values):
-        if increment_timestamp:
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    if ts_field != None:
+        ts_index = field_keys.index(ts_field)
+
+    for i,val in enumerate(field_values):
+        if ts_format != None:
+            ts_datetime = datetime.strptime(field_values[i][ts_index], ts_format)
+            timestamp = int((ts_datetime - epoch).total_seconds()*(10**9))
+        elif ts_field != None:
+            timestamp = int((field_values[i][ts_index] - epoch).total_seconds()*(10**9))
+        if increment_ts:
             timestamp = timestamp + i*(10**6)
         tags = ilp_join_tags(tag_keys, tag_values, i)
         fields = ilp_join_fields(field_keys, field_values[i], field_types)

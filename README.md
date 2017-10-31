@@ -61,9 +61,10 @@ uninstall plugin validate_password;
 alter user 'root'@'localhost' identified by 'root';
 ```
 
-Now set the long query time to some appropriate value (default 10.0s), change the slow query log file and switch slow query logging on
+Now set the long query time to some appropriate value (default 10.0s), set the slow query log to log to table and switch slow query logging on
 ```
 mysql -u root -proot -e "set global long_query_time = 1.0;"
+mysql -u root -proot -e "set global log_format='TABLE';"
 mysql -u root -proot -e "set global slow_query_log = 'ON';"
 ```
 
@@ -101,6 +102,7 @@ mysqladmin -u root password 'root'
 Now set variables for monitoring:
 ```
 mysql -u root -proot -e 'set global slow_query_log="ON";'
+mysql -u root -proot -e "set global log_format='TABLE';"
 mysql -u root -proot -e 'set global long_query_time=1.0;'
 mysql -u root -proot -e 'set global userstat="ON";'
 mysql -u root -proot -e 'install soname "query_response_time";'
@@ -165,27 +167,14 @@ Uncomment any other desired MySQL metrics to be collected. NOTE: For MariaDB ens
 In the `[[inputs.exec]]` section set `commands = ["python /etc/telegraf/telegraf.d/query_mysql.py"]` and `data_format = "influx"` to enable collection of custom MySQL data such as blocking sessions. Command-line arguments can also be used to change the script logging level etc., see the script for details.  
 
 ### Monitoring the slow log
-First switch the MySQL slow log on and set the long_query_time to some appropriate value:
+First switch the MySQL slow log on to log to a table, and set the long_query_time to some appropriate value:
 ```
 mysql -u root -proot -e "set global slow_query_log = 'ON';"
+mysql -u root -proot -e "set global log_format = 'TABLE';"
 mysql -u root -proot -e "set global long_query_time = 1.0;"
 ```
-As currently Telegraf can only read single-line log events, we need to merge the multi-line events in the slow log to one line. To do this create a new file that will have the entire log event on one line, set the correct ownership and permissions, and copy and run the transform_slowlog.sh script:
-```
-sudo touch /var/lib/mysql/slow.log
-sudo cp /mysql/transform_slowlog.sh /var/lib/mysql
-sudo chown mysql:mysql /var/lib/mysql/slow.log /var/lib/mysql/transform_slowlog.sh
-sudo chmod 660 /var/lib/mysql/slow.log
-sudo chmod 700 /var/lib/mysql/transform_slowlog.sh
-nohup sudo su -s /bin/bash mysql -c "/var/lib/mysql/transform_slowlog.sh > /var/lib/mysql/slow.log 2> /dev/null" &
-```
 
-Now give Telegraf read access to the new single-line event slow log file:
-```
-sudo setfacl -m 'user:telegraf:r' /var/lib/mysql/slow.log
-```
-
-Now change the Telegraf configuration to read the newly formatted slow log. In the `[[inputs.logparser]]` section set `files = ["/var/lib/mysql/slow.log"]` , `patterns = ["# Time: %{DATA:timestamp} # User@Host: %{NOTSPACE:query_user:string} @ %{NOTSPACE:query_host:string}%{GREEDYDATA}# Query_time: %{NUMBER:query_time:float}.*Lock_time: %{NUMBER:lock_time:float}.*Rows_sent: %{INT:rows_sent:int}.*Rows_examined: %{INT:rows_examined:int}.*SET timestamp=%{INT}; %{GREEDYDATA:query:string};"]` and `measurement = "mysql_slow"`
+As currently Telegraf can't parse multiline log events with the logparser plugin, instead we use the exec plugin and the query_mysql.py script specified above to collect mysql metrics. See the script for details.
 
 Start Telegraf service: `sudo systemctl start telegraf`
 
