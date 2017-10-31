@@ -5,7 +5,6 @@ import argparse
 import sys
 import os
 import time
-import gc
 import datetime
 
 def main():
@@ -25,7 +24,8 @@ def main():
     gather_metrics(args.host, args.port, args.user, args.password)
 
 def gather_metrics(db_host, db_port, db_user, db_pass):
-    gc.collect() # Clean up any old DB connections
+    """ Connect to the DB and gather the metrics specified by the gather_* functions, 
+        then close the connection """
     try:
         db = MySQLdb.connect(host=db_host, port=db_port, user=db_user, passwd=db_pass)
         cursor = db.cursor()
@@ -154,6 +154,8 @@ def gather_userstats(cursor, host, versions):
         logging.info('Successfully queried for user statistics')
 
 def get_version(cursor):
+    """ Returns a dictionary describing the DB version. Useful for queries 
+        that are only valid on certain DB versions """
     try:
         version = cursor.execute('SELECT VERSION()')
         version = cursor.fetchone()[0]
@@ -172,6 +174,9 @@ def get_version(cursor):
     return versions
 
 def variable_is_on(cursor, variable):
+    """ Returns a boolean describing whether a variable is on. Returns false 
+        if the varaible doesn't exist. Useful for checking whether it is worth
+        executing a query """
     query = 'show variables like \'' + variable + '\''
     data = execute_query(cursor, query)
 
@@ -186,6 +191,9 @@ def variable_is_on(cursor, variable):
         return False
 
 def execute_query(cursor, query):
+    """ Tries to execute the query on the DB and fetch the data. Returns an empty
+        list in the case of error. Doesn't exit the script so that other metrics can
+        be collected even if one query fails """
     try:
         cursor.execute(query)
     except MySQLdb.Warning as e:
@@ -205,9 +213,27 @@ def execute_query(cursor, query):
     return data
 
 def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, ts_field=None, ts_format=None, increment_ts=False):
-    # If there are multiple measurements with the same name, tags, fields and timestamp they overwrite
-    # each other in InfluxDB. Add 1ms to timestamp to avoid this. Requires precision = "1ms" in
-    # Telegraf configuration
+    """ Prints metrics in Influx line protocol format https://docs.influxdata.com/influxdb/v1.3/write_protocols/line_protocol_tutorial/
+        for the Telegraf exec plugin to output to InfluxDB. Each line printed is a point to be recorded to InfluxDB.
+
+        Arguments:
+        measurement  -- the InfluxDB measurement to write to
+        tag_keys     -- a list of strings of the field names to be used as tags, e.g. ['host','user']
+        tag_values   -- a list containing either a single value or list of values for each tag key. There must either be a single tag
+                        value for all points that will be written, or a value must be given for each point to be written i.e. the list
+                        of values must be of the same length as the numbers of points to be written. e.g. if writing 3 points and using
+                        the tag keys ['host','user'], tag_values could be ['vm.stfc.ac.uk',['reader','reader','writer']]
+        field_keys   -- a list of strings of the field names to be used e.g. ['waiting_thread','waiting_query']
+        field_values -- a 2D list of the field values to be written. The first index is the point to be written and the second index is
+                        the field e.g. if writing 2 points and using the field_keys ['waiting_thread','waiting_query'], field_values could
+                        be [[12001,'select * from *'],[12002,'select * from *']]
+        field_types  -- a list of strings specifying the type of each field. Valid string values are 'string', 'integer' and 'float'
+        ts_field     -- a string, if you want to use one of the fields returned by the query as the timestamp in InfluxDB, specify the field name here
+        ts_format    -- a string, if the field specified by ts_field isn't a datetime object, ts_format specifies the format to use when converting it
+                        into a datetime object. See https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior
+        increment_ts -- a boolean, if there are multiple measurements with the same name, tags, fields and timestamp they overwrite
+                        each other in InfluxDB. This adds 1ms to the timestamp to avoid this. This is useful when collecting event-based metrics
+                        e.g. blocking sessions. For this setting to work it requires precision = '1ms' in the Telegraf configuration """
     timestamp = int(time.time())*(10**9)
     epoch = datetime.datetime.utcfromtimestamp(0)
     if ts_field != None:
