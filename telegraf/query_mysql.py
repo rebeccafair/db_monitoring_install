@@ -100,11 +100,11 @@ def gather_blocking_sessions(cursor, host, versions):
     logging.info('Successfully queried for blocking sessions')
 
 def gather_slow_queries(cursor, host):
-    # This queries for slow queries that have finished within the last 2 minutes (although the Telegraf
-    # exec plugin runs every 1 minute, 2 minutes is chosen to avoid potentially missing any queries due
-    # to timing). To avoid queries being counted twice, the 'start_time' field is used as the timestamp
-    # in InfluxDB, so that even if any queries are submitted twice, they will be overwritten as they have
-    # the same timestamp.
+    """ This queries for slow queries that have finished within the last 2 minutes (although the Telegraf
+        exec plugin runs every 1 minute, 2 minutes is chosen to avoid potentially missing any queries due
+        to timing). To avoid queries being counted twice, the 'start_time' field is used as the timestamp
+        in InfluxDB, so that even if any queries are submitted twice, they will be overwritten as they have
+        the same timestamp. """
     query = ('select start_time, user_host, query_time, lock_time, rows_sent, rows_examined, db, '
              'last_insert_id, insert_id, server_id, sql_text, thread_id from mysql.slow_log '
              'where addtime(start_time,query_time) > date_sub(now(), interval 2 minute);')
@@ -124,6 +124,8 @@ def gather_slow_queries(cursor, host):
     logging.info('Successfully queried for slow queries')
 
 def gather_query_response_time(cursor, host):
+    """ Gathers query response time. Requires the query response time plugin
+        which is only available in MariaDB and query_response_time_stats='ON' """
     count_query = 'SELECT count from information_schema.query_response_time order by time asc'
     sum_query = 'SELECT SUM(total), SUM(count) from information_schema.query_response_time'
     measurement = 'mysql_query_response'
@@ -149,6 +151,7 @@ def gather_query_response_time(cursor, host):
         logging.info('Successfully queried for query response time')
 
 def gather_userstats(cursor, host, versions):
+    """ Gathers user statistics, is only available in MariaDB and requires userstat ='ON' """
     query = 'show user_statistics'
     measurement = 'mysql_userstat'
     tag_keys = ['host','user']
