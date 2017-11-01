@@ -1,3 +1,18 @@
+"""
+    A custom script to gather metrics from a MySQL instance. To be run by the Telegraf exec
+    plugin, and prints metrics in Influx line protocol format. To add new metrics create
+    a new function gather_* and call it from gather_metrics. The gather_* function must:
+    1) Have at least the DB cursor as an argument to enable the DB to be called. It may also
+       be helpful to have host as the argument, so the host can be used as a tag value and
+       distinguish different DB instances once the metrics are in InfluxDB
+    2) Have a query string
+    3) Call execute_query to obtain the field values using the query string
+    4) Have a measurement string to write the metrics to
+    5) Have a list of tag keys and tag values
+    6) Have a list of field keys and field values
+    7) Call print_influx_line_protocol
+"""
+
 import MySQLdb
 import warnings
 import logging
@@ -85,6 +100,11 @@ def gather_blocking_sessions(cursor, host, versions):
     logging.info('Successfully queried for blocking sessions')
 
 def gather_slow_queries(cursor, host):
+    # This queries for slow queries that have finished within the last 2 minutes (although the Telegraf
+    # exec plugin runs every 1 minute, 2 minutes is chosen to avoid potentially missing any queries due
+    # to timing). To avoid queries being counted twice, the 'start_time' field is used as the timestamp
+    # in InfluxDB, so that even if any queries are submitted twice, they will be overwritten as they have
+    # the same timestamp.
     query = ('select start_time, user_host, query_time, lock_time, rows_sent, rows_examined, db, '
              'last_insert_id, insert_id, server_id, sql_text, thread_id from mysql.slow_log '
              'where addtime(start_time,query_time) > date_sub(now(), interval 2 minute);')
@@ -101,7 +121,7 @@ def gather_slow_queries(cursor, host):
         field_values = execute_query(cursor, query)
         print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, ts_field='start_time')
 
-    logging.info('Successfully queried for blocking sessions')
+    logging.info('Successfully queried for slow queries')
 
 def gather_query_response_time(cursor, host):
     count_query = 'SELECT count from information_schema.query_response_time order by time asc'
@@ -214,7 +234,7 @@ def execute_query(cursor, query):
 
 def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, ts_field=None, ts_format=None, increment_ts=False):
     """ Prints metrics in Influx line protocol format https://docs.influxdata.com/influxdb/v1.3/write_protocols/line_protocol_tutorial/
-        for the Telegraf exec plugin to output to InfluxDB. Each line printed is a point to be recorded to InfluxDB.
+        for the Telegraf exec plugin to output to InfluxDB. Each line printed is a point to be written to InfluxDB.
 
         Arguments:
         measurement  -- the InfluxDB measurement to write to
@@ -252,6 +272,8 @@ def print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, fi
         print measurement + ',' + ','.join(tags) + ' ' + ','.join(fields) + ' ' + str(timestamp)
 
 def ilp_join_tags(keys, values, index):
+    """ Joins tag keys and values together in Influx line protocol format. Handles both cases where there is
+        one tag value for all points and where there is a tag value for each point """
     joined_tags = []
     for i, key in enumerate(keys):
         if isinstance(values[i], list):
@@ -261,6 +283,8 @@ def ilp_join_tags(keys, values, index):
     return joined_tags
 
 def ilp_join_fields(keys, values, types):
+    """ Joins field keys and values together in Influx line protocol format. Handles fields differently
+        depending on their type"""
     joined_fields = []
     for i, val in enumerate(keys):
         if types[i] == 'integer':
