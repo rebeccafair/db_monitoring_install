@@ -398,7 +398,7 @@
         "useTags": false
       },
       {
-        "datasource": "InfluxDB",
+        "datasource": "InfluxDB Telegraf",
         "filters": [],
         "hide": 0,
         "label": "Extra Filters",
