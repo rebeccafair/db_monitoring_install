@@ -21,8 +21,11 @@ import sys
 import os
 import time
 import datetime
+from systemd.journal import JournalHandler
 
 def main():
+
+    global journal_log
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host',default='localhost')
@@ -30,12 +33,13 @@ def main():
     parser.add_argument('--user',default='telegraf')
     parser.add_argument('--password',default='telegraf')
     parser.add_argument('--loglevel',default='ERROR')
-    parser.add_argument('--logfile',default='/var/log/telegraf/exec_mysql.log')
     args = parser.parse_args()
 
     warnings.simplefilter('error', MySQLdb.Warning)
-    logging.basicConfig(filename=args.logfile, level=getattr(logging, args.loglevel.upper()),
-                        format='%(asctime)s: %(levelname)s: %(message)s')
+    journal_log = logging.getLogger()
+    journal_log.addHandler(JournalHandler())
+    journal_log.setLevel(getattr(logging, args.loglevel.upper()))
+
     gather_metrics(args.host, args.port, args.user, args.password)
 
 def gather_metrics(db_host, db_port, db_user, db_pass):
@@ -45,9 +49,9 @@ def gather_metrics(db_host, db_port, db_user, db_pass):
         db = MySQLdb.connect(host=db_host, port=db_port, user=db_user, passwd=db_pass)
         cursor = db.cursor()
     except MySQLdb.Warning as e:
-        logging.warning(e[0])
+        journal_log.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to connect to DB - ' + e[1] + '(' + str(e[0]) + ')')
+        journal_log.error('Failed to connect to DB - ' + e[1] + '(' + str(e[0]) + ')')
         sys.exit(0)
 
     v = get_version(cursor)
@@ -60,7 +64,7 @@ def gather_metrics(db_host, db_port, db_user, db_pass):
 
     db.close()
 
-    logging.info('Successfully gathered MySQL metrics')
+    journal_log.info('Successfully gathered MySQL metrics')
 
 def gather_blocking_sessions(cursor, host, versions):
     query = ('SELECT r.trx_id waiting_trx_id, '
@@ -97,7 +101,7 @@ def gather_blocking_sessions(cursor, host, versions):
         field_values = execute_query(cursor, query)
         print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, increment_ts=True)
 
-    logging.info('Successfully queried for blocking sessions')
+    journal_log.info('Successfully queried for blocking sessions')
 
 def gather_slow_queries(cursor, host):
     """ This queries for slow queries that have finished within the last 2 minutes (although the Telegraf
@@ -106,22 +110,22 @@ def gather_slow_queries(cursor, host):
         in InfluxDB, so that even if any queries are submitted twice, they will be overwritten as they have
         the same timestamp. """
     query = ('select start_time, user_host, query_time, lock_time, rows_sent, rows_examined, db, '
-             'last_insert_id, insert_id, server_id, sql_text, thread_id from mysql.slow_log '
+             'last_insert_id, insert_id, server_id, sql_text from mysql.slow_log '
              'where addtime(start_time,query_time) > date_sub(now(), interval 2 minute);')
 
     measurement = 'mysql_slow'
     tag_keys = ['host']
     tag_values = [host]
     field_keys = ['start_time', 'user_host', 'query_time', 'lock_time', 'rows_sent', 'rows_examined', 'db',
-                  'last_insert_id', 'insert_id', 'server_id', 'sql_text', 'thread_id']
+                  'last_insert_id', 'insert_id', 'server_id', 'sql_text']
     field_types = ['string', 'string', 'string', 'string', 'integer', 'integer', 'string',
-                  'integer', 'integer', 'integer', 'string', 'integer']
+                  'integer', 'integer', 'integer', 'string']
 
     if variable_is_on(cursor,'slow_query_log'):
         field_values = execute_query(cursor, query)
         print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types, ts_field='start_time')
 
-    logging.info('Successfully queried for slow queries')
+    journal_log.info('Successfully queried for slow queries')
 
 def gather_query_response_time(cursor, host):
     """ Gathers query response time. Requires the query response time plugin
@@ -148,7 +152,7 @@ def gather_query_response_time(cursor, host):
 
         print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
 
-        logging.info('Successfully queried for query response time')
+        journal_log.info('Successfully queried for query response time')
 
 def gather_userstats(cursor, host, versions):
     """ Gathers user statistics, is only available in MariaDB and requires userstat ='ON' """
@@ -174,7 +178,7 @@ def gather_userstats(cursor, host, versions):
         field_values = [x[1:] for x in data]
         tag_values = [host, [x[0] for x in data]]
         print_influx_line_protocol(measurement, tag_keys, tag_values, field_keys, field_values, field_types)
-        logging.info('Successfully queried for user statistics')
+        journal_log.info('Successfully queried for user statistics')
 
 def get_version(cursor):
     """ Returns a dictionary describing the DB version. Useful for queries 
@@ -183,9 +187,9 @@ def get_version(cursor):
         version = cursor.execute('SELECT VERSION()')
         version = cursor.fetchone()[0]
     except MySQLdb.Warning as e:
-        logging.warning(e[0])
+        journal_log.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to get DB version - ' + e[1] + '(' + str(e[0]) + ')')
+        journal_log.error('Failed to get DB version - ' + e[1] + '(' + str(e[0]) + ')')
         sys.exit(0)
 
     version_number = version.split('-')[0]
@@ -220,17 +224,17 @@ def execute_query(cursor, query):
     try:
         cursor.execute(query)
     except MySQLdb.Warning as e:
-        logging.warning(e[0])
+        journal_log.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to execute query [' + query + '] - ' + e[1] + '(' + str(e[0]) + ')')
+        journal_log.error('Failed to execute query [' + query + '] - ' + e[1] + '(' + str(e[0]) + ')')
         return []
 
     try:
         data = cursor.fetchall()
     except MySQLdb.Warning as e:
-        logging.warning(e[0])
+        journal_log.warning(e[0])
     except MySQLdb.Error as e:
-        logging.error('Failed to fetch data for query [' + query + '] - ' + e[1] + '(' + str(e[0]) + ')')
+        journal_log.error('Failed to fetch data for query [' + query + '] - ' + e[1] + '(' + str(e[0]) + ')')
         return []
 
     return data
