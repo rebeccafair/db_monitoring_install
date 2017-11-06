@@ -688,7 +688,7 @@
         "useTags": false
       },
       {
-        "datasource": "InfluxDB",
+        "datasource": "DB Metrics",
         "filters": [],
         "hide": 0,
         "label": "Extra Filters",
