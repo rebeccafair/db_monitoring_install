@@ -1,0 +1,67 @@
+var name = 'Blocked sessions'
+
+var triggerType = 'threshold'
+
+// Thresholds
+var crit = 1
+
+// Query details
+var db = 'db_metrics'
+var rp = 'OneMonth'
+var measurement = 'mysql_blocking'
+var groupBy = ['host']
+var whereFilter = lambda: TRUE
+
+// Subject and text for email
+var message = '{{.Level}}:  Blocked sessions on {{ index .Tags "host" }}'
+var details = 'There are currently {{ index .Fields "value" | printf "%.0f" }} blocked sessions on {{ index .Tags "host"}} <a href="https://vande.gridpp.rl.ac.uk/dbmonitor/dashboard/db/mysql-blocked-transactions?refresh=5s&orgId=1&var-Host={{ index .Tags "host"}}">View</a><br><br> {{.Time}}'
+
+// Details for storing alert history in InfluxDB
+var outputInflux = 'influxdb04'
+var outputDB = 'db_alerts'
+var outputRP = 'autogen'
+var outputMeasurement = 'alerts'
+var idVar = name + ':{{.Group}}'
+var idTag = 'alertID'
+var levelTag = 'level'
+var messageField = 'message'
+var durationField = 'duration'
+
+// The stats node emits the total number of points processed once per minute.
+// This is required to generate a blocked sessions count of 0, because otherwise 
+// if there are no blocked sessions, no value is generated and the alert state
+// remains at critical. The derivative of the total number of points is used to
+// find the number of blocked sessions in the past minute.
+var data = stream
+    |from()
+        .database(db)
+        .retentionPolicy(rp)
+        .measurement(measurement)
+        .groupBy(groupBy)
+        .where(whereFilter)
+    |stats(1m)
+    |derivative('emitted')
+        .unit(1m)
+        .nonNegative()
+        .as('value')
+
+var trigger = data
+    |alert()
+        .crit(lambda: "value" > crit)
+        .stateChangesOnly()
+        .message(message)
+        .id(idVar)
+        .idTag(idTag)
+        .levelTag(levelTag)
+        .messageField(messageField)
+        .durationField(durationField)
+        .details(details)
+        .email('rebecca.fair@stfc.ac.uk')
+
+trigger
+    |influxDBOut()
+        .cluster(outputInflux)
+        .database(outputDB)
+        .measurement(outputMeasurement)
+        .tag('alertName', name)
+        .tag('triggerType', triggerType)
