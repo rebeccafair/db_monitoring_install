@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "4.5.2"
+      "version": "4.6.1"
     },
     {
       "type": "panel",
@@ -804,7 +804,9 @@
   ],
   "schemaVersion": 14,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "MariaDB"
+  ],
   "templating": {
     "list": [
       {
@@ -860,5 +862,5 @@
   },
   "timezone": "",
   "title": "MariaDB User Statistics",
-  "version": 9
+  "version": 2
 }

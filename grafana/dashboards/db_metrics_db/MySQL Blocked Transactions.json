@@ -596,7 +596,7 @@
               "measurement": "mysql_blocking",
               "orderByTime": "ASC",
               "policy": "default",
-              "query": "SELECT count(distinct(\"waiting_trx_id\")) FROM \"mysql_blocking\" WHERE (\"host\" =~ /^$Host$/) AND $timeFilter GROUP BY time($__interval)",
+              "query": "SELECT count(distinct(\"waiting_trx_id\")) FROM \"mysql_blocking\" WHERE $timeFilter AND \"host\" =~ /^$Host$/GROUP BY time($__interval)",
               "rawQuery": true,
               "refId": "A",
               "resultFormat": "time_series",
@@ -728,5 +728,5 @@
   },
   "timezone": "",
   "title": "MySQL Blocked Transactions",
-  "version": 18
+  "version": 3
 }
