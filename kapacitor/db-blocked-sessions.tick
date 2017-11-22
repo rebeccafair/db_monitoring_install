@@ -3,7 +3,7 @@ var name = 'Blocked sessions'
 var triggerType = 'threshold'
 
 // Thresholds
-var crit = 1
+var crit = 5
 
 // Query details
 var db = 'db_metrics'
@@ -26,6 +26,7 @@ var idTag = 'alertID'
 var levelTag = 'level'
 var messageField = 'message'
 var durationField = 'duration'
+var emailAddress = 'miguel.lopez-fernandez@stfc.ac.uk'
 
 // The stats node emits the total number of points processed once per minute.
 // This is required to generate a blocked sessions count of 0, because otherwise 
@@ -56,7 +57,7 @@ var trigger = data
         .messageField(messageField)
         .durationField(durationField)
         .details(details)
-        .email('rebecca.fair@stfc.ac.uk')
+        .email(emailAddress)
 
 trigger
     |influxDBOut()
